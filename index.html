@@ -375,13 +375,21 @@
             
             switch (eventType) {
                 case 'INSERT':
-                    const exists = appData[appDataKey].some(item => JSON.stringify(item) === JSON.stringify(newRecord));
+                    let exists;
+                    if (appDataKey === 'deal_tags') {
+                        exists = appData.deal_tags.some(dt => dt.id_negocio_fk === newRecord.id_negocio_fk && dt.id_tag_fk === newRecord.id_tag_fk);
+                    } else {
+                        exists = appData[appDataKey].some(item => item[idKey] === newRecord[idKey]);
+                    }
                     if (!exists) appData[appDataKey].push(newRecord);
                     break;
                 case 'UPDATE':
-                    const indexToUpdate = appData[appDataKey].findIndex(item => item[idKey] == newRecord[idKey]);
-                    if (indexToUpdate !== -1) appData[appDataKey][indexToUpdate] = newRecord;
-                    else appData[appDataKey].push(newRecord);
+                    const indexToUpdate = appData[appDataKey].findIndex(item => item[idKey] === newRecord[idKey]);
+                    if (indexToUpdate !== -1) {
+                        appData[appDataKey][indexToUpdate] = { ...appData[appDataKey][indexToUpdate], ...newRecord };
+                    } else {
+                        appData[appDataKey].push(newRecord);
+                    }
                     break;
                 case 'DELETE':
                     if (appDataKey === 'deal_tags') {
@@ -395,7 +403,9 @@
             renderBoard(); 
             if (!dealModal.classList.contains('hidden')) {
                 const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
-                if (openDealId) showDealModal(openDealId);
+                if (openDealId && (newRecord?.id_negocio_fk === openDealId || newRecord?.id_negocio === openDealId || oldRecord?.id_negocio_fk === openDealId || oldRecord?.id_negocio === openDealId)) {
+                   showDealModal(openDealId);
+                }
             }
         }
 
@@ -403,18 +413,15 @@
         function renderBoard() {
             let filteredDeals = appData.deals;
 
-            // 1. Filtrar por "Minhas Negociações"
             if (filterOnlyMyDeals) {
                 filteredDeals = filteredDeals.filter(deal => deal.id_usuario_responsavel_fk === currentUser.id_usuario);
             }
             
-            // 2. Filtrar por tag
             if (activeTagId) {
                 const dealIdsWithTag = appData.deal_tags.filter(dt => dt.id_tag_fk == activeTagId).map(dt => dt.id_negocio_fk);
                 filteredDeals = filteredDeals.filter(deal => dealIdsWithTag.includes(deal.id_negocio));
             }
 
-            // 3. Filtrar por pesquisa de texto
             const searchTerm = searchInput.value.trim().toLowerCase();
             if (searchTerm.length >= 2) {
                 filteredDeals = filteredDeals.filter(deal => deal.nome_empresa.toLowerCase().includes(searchTerm));
@@ -492,7 +499,6 @@
             const btnText = document.getElementById('filter-btn-text');
             const myDealsBtn = document.getElementById('my-deals-filter-btn');
 
-            // Configuração do filtro de tags
             optionsContainer.innerHTML = `<a href="#" class="filter-tag-option text-gray-700 block px-4 py-2 text-sm" data-tag-id="">TODAS AS TAGS</a>`;
             appData.tags.forEach(tag => {
                 const option = document.createElement('a');
@@ -520,7 +526,6 @@
                 }
             });
 
-            // Configuração do filtro "Minhas Negociações"
             if (filterOnlyMyDeals) {
                 myDealsBtn.classList.add('active');
             }
@@ -746,16 +751,20 @@
 
             try {
                 if (dealId) {
-                    const { error } = await dbClient.from('sf_negociacoes').update(dealData).eq('id_negocio', dealId);
+                    const { data, error } = await dbClient.from('sf_negociacoes').update(dealData).eq('id_negocio', dealId).select().single();
                     if (error) throw error;
+                    const index = appData.deals.findIndex(d => d.id_negocio === dealId);
+                    if (index > -1) appData.deals[index] = data;
                     showToast("Negociação atualizada!");
                 } else {
                     const { data, error } = await dbClient.from('sf_negociacoes').insert(dealData).select().single();
                     if (error) throw error;
+                    appData.deals.push(data);
                     await addHistoryEntry(data.id_negocio, 'Criação', 'Negociação criada.');
                     showToast("Negociação criada!");
                 }
                 hideDealModal();
+                renderBoard();
             } catch (error) {
                 showToast("Erro ao salvar: " + error.message);
                 console.error(error);
@@ -767,8 +776,10 @@
                 try {
                     const { error } = await dbClient.from('sf_negociacoes').delete().eq('id_negocio', dealId);
                     if (error) throw error;
+                    appData.deals = appData.deals.filter(d => d.id_negocio !== dealId);
                     showToast("Negociação excluída.");
                     hideDealModal();
+                    renderBoard();
                 } catch (error) {
                     showToast("Erro ao excluir: " + error.message);
                 }
@@ -776,12 +787,17 @@
         }
         
         async function handleTagChange(dealId, tagId, isChecked) {
-            const record = { id_negocio_fk: dealId, id_tag_fk: tagId };
+            const record = { id_negocio_fk: dealId, id_tag_fk: parseInt(tagId) };
             if (isChecked) {
-                await dbClient.from('sf_negociacao_tags').insert(record);
+                const { data, error } = await dbClient.from('sf_negociacao_tags').insert(record).select().single();
+                if (!error) appData.deal_tags.push(data);
             } else {
-                await dbClient.from('sf_negociacao_tags').delete().match(record);
+                const { error } = await dbClient.from('sf_negociacao_tags').delete().match(record);
+                if (!error) {
+                    appData.deal_tags = appData.deal_tags.filter(dt => !(dt.id_negocio_fk === dealId && dt.id_tag_fk === parseInt(tagId)));
+                }
             }
+            renderBoard();
         }
 
         async function handleFollowupToggle(dealId, isChecked) {
