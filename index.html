@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Funil de Vendas (Supabase)</title>
+    
+    <meta name="theme-color" content="#2fc36a">
+    
+    <link rel="icon" type="image/png" sizes="32x32" href="https://raw.githubusercontent.com/nattanlima/meu-crm-pwa/main/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://raw.githubusercontent.com/nattanlima/meu-crm-pwa/main/icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="https://raw.githubusercontent.com/nattanlima/meu-crm-pwa/main/icons/favicon-16x16.ico">
+
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/nattanlima/meu-crm-pwa/main/icons/apple-touch-icon.png">
+
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* --- ESTILOS GERAIS E MELHORIAS DE LAYOUT --- */
+        html, body {
+            height: 100%;
+            overflow: hidden; 
+            background-color: #f8fafc; 
+        }
+        #kanban-board {
+            height: calc(100vh - 73px);
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        @media (max-width: 767px) {
+            #kanban-board {
+                height: calc(100vh - 115px);
+            }
+        }
+        .kanban-column {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease-in-out;
+        }
+        .kanban-cards {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: none; /* Firefox */
+        }
+        .kanban-cards::-webkit-scrollbar { 
+            display: none; /* Chrome, Safari, and Opera */
+        }
+        #deal-modal-content, #history-list-container, #task-list-container {
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+        .tab-badge {
+            background-color: #e2e8f0;
+            color: #475569;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            margin-left: 8px;
+        }
+        .popup-menu {
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+        }
+        .popup-menu.hidden {
+            transform: translateY(-10px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .form-input { margin-top: 4px; display: block; width: 100%; border-radius: 0.5rem; border: 1px solid #d4d4d8; padding: 0.5rem 0.75rem; background-color: #fafafa; }
+        .form-input:focus { border-color: #16a34a; outline: 2px solid transparent; outline-offset: 2px; box-shadow: 0 0 0 2px #a7f3d0; }
+        .tab-button { cursor: pointer; padding: 0.5rem 1rem; border-bottom: 2px solid transparent; color: #737373; }
+        .tab-button.active { border-color: #2fc36a; color: #15803d; font-weight: 600; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .pulse-animation { animation: pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+        /* --- ESTILOS PARA COLUNAS RECOLHIDAS --- */
+        .kanban-column.collapsed { 
+            width: 56px; 
+            cursor: pointer; 
+        }
+        .kanban-column.collapsed .column-header-expanded, 
+        .kanban-column.collapsed .kanban-cards { 
+            display: none; 
+        }
+        .kanban-column.collapsed .column-header-collapsed { 
+            display: flex; 
+        }
+        .kanban-column .column-header-collapsed .vertical-text { 
+            writing-mode: vertical-rl; 
+            transform: rotate(180deg); 
+            white-space: nowrap; 
+            padding: 16px 0; 
+        }
+
+        /* --- ESTILOS PARA FOLLOW-UP E FILTROS --- */
+        .followup-badge {
+            background-color: #dcfce7; /* green-100 */
+            color: #166534; /* green-800 */
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2fc36a;
+        }
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+        .filter-btn.active {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            color: #166534;
+        }
+    </style>
+</head>
+<body class="font-sans h-full">
+
+    <div id="login-screen" class="flex items-center justify-center h-screen bg-slate-100 p-4">
+        <div class="w-full max-w-sm p-8 space-y-6 bg-white rounded-xl shadow-md">
+            <div class="text-center">
+                <h2 class="mt-6 text-3xl font-bold text-gray-900">CRM Funil de Vendas</h2>
+                <p class="text-gray-500">Faça login para continuar</p>
+            </div>
+            <div id="login-error" class="hidden p-3 text-sm text-red-700 bg-red-100 rounded-lg"></div>
+            <form id="login-form" class="space-y-4">
+                <div><label for="email" class="text-sm font-medium text-gray-700">Email</label><input id="email" type="email" required class="form-input" placeholder="seu.email@exemplo.com.br"></div>
+                <div><label for="password" class="text-sm font-medium text-gray-700">Sua senha</label><input id="password" type="password" required class="form-input" placeholder="••••••••"></div>
+                <div><button type="submit" class="w-full px-4 py-2 text-lg font-semibold text-white bg-[#2fc36a] rounded-full hover:bg-[#29a85b] transition-colors">Entrar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="loading-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-100 z-50">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-600 z-10 pulse-animation">Carregando negociações...</h2>
+    </div>
+
+    <div id="crm-app" class="hidden h-full flex flex-col">
+        <header class="bg-white p-2 sm:p-4 flex flex-wrap gap-2 sm:gap-4 justify-between items-center border-b border-slate-200 flex-shrink-0">
+            <div class="flex items-center space-x-3">
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Funil de Vendas</h1>
+            </div>
+            
+            <div class="w-full md:w-auto md:flex-1 flex justify-center px-0 md:px-4 order-3 md:order-2">
+                 <div class="flex items-center gap-2 w-full max-w-lg">
+                    <div id="filter-container" class="relative flex-shrink-0">
+                         <button id="filter-trigger-btn" class="flex items-center justify-center w-full px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                             <span id="filter-btn-text">TODAS AS TAGS</span>
+                             <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
+                         </button>
+                         <div id="filter-popup" class="hidden popup-menu absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                             <div id="filter-options-container" class="py-1"></div>
+                         </div>
+                    </div>
+                    <div class="relative flex-grow">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400"></i></div>
+                        <input type="search" id="search-input" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400" placeholder="Pesquisar por empresa...">
+                    </div>
+                    <button id="my-deals-filter-btn" title="Filtrar minhas negociações" class="filter-btn flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-300 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-user"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-2 sm:space-x-4 justify-end order-2 md:order-3">
+                 <button id="add-deal-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full flex items-center">
+                    <i class="fas fa-plus mr-2"></i> Nova
+                </button>
+                <div id="user-menu-container" class="relative">
+                    <button id="user-avatar-btn" class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 overflow-hidden"></button>
+                    <div id="logout-popup" class="hidden popup-menu absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
+                        <div class="py-1">
+                            <div class="px-4 py-2 border-b">
+                                <p id="popup-user-name" class="text-sm font-semibold text-gray-900 truncate"></p>
+                                <p id="popup-user-email" class="text-sm text-gray-500 truncate"></p>
+                            </div>
+                            <a href="#" id="popup-logout-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sair</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main id="kanban-board" class="flex space-x-2 sm:space-x-4 p-2 sm:p-4 flex-grow"></main>
+    </div>
+
+    <!-- Modal de Negociação -->
+    <div id="deal-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-20">
+        <div id="deal-modal-content" class="bg-white rounded-xl shadow-2xl w-full max-w-lg md:max-w-4xl flex flex-col transform transition-all duration-300 ease-in-out scale-95 opacity-0"></div>
+    </div>
+    
+    <!-- Modal de Edição de Tarefa -->
+    <div id="task-editor-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-30">
+        <div id="task-editor-content" class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col transform transition-all duration-300 ease-in-out scale-95 opacity-0"></div>
+    </div>
+    
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2 transition-all duration-300 z-40"></div>
+    <template id="loader-template"><div class="flex items-center justify-center h-full p-8"><i class="fas fa-spinner fa-spin text-4xl text-green-500"></i></div></template>
+
+    <script>
+        // --- INÍCIO: CONFIGURAÇÃO DO SUPABASE ---
+        const SUPABASE_URL = 'https://ccenxfyqwtfpexltuwrn.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjZW54Znlxd3RmcGV4bHR1d3JuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyNzE1MTMsImV4cCI6MjA2ODg0NzUxM30.6un31sODuCyd5Dz_pR_kn656k74jjh5CNAfF0YteT7I';
+        
+        const { createClient } = supabase;
+        const dbClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // --- FIM: CONFIGURAÇÃO DO SUPABASE ---
+
+        // --- ELEMENTOS DO DOM E VARIÁVEIS GLOBAIS ---
+        const loginScreen = document.getElementById('login-screen');
+        const loadingScreen = document.getElementById('loading-screen');
+        const crmApp = document.getElementById('crm-app');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const kanbanBoard = document.getElementById('kanban-board');
+        const dealModal = document.getElementById('deal-modal');
+        const dealModalContent = document.getElementById('deal-modal-content');
+        const searchInput = document.getElementById('search-input');
+        const loaderTemplate = document.getElementById('loader-template');
+        const toast = document.getElementById('toast');
+        
+        let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [] };
+        let currentUser = null;
+        let activeTagId = null;
+        let filterOnlyMyDeals = true; // Filtro de "minhas negociações" ativo por padrão
+
+        // --- FUNÇÕES DE UTILIDADE ---
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.remove('opacity-0', 'translate-y-2');
+            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); }, 3000);
+        }
+
+        // --- LÓGICA DE AUTENTICAÇÃO E INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('sf_crm_user');
+            if (savedUser) { 
+                currentUser = JSON.parse(savedUser); 
+                showApp(true); 
+            } else { 
+                showLogin(); 
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            loginError.classList.add('hidden');
+            
+            try {
+                const { data, error } = await dbClient.from('sf_usuarios').select('*').eq('email', email).eq('senha', password).single();
+                if (error || !data) throw new Error('Credenciais inválidas.');
+                
+                currentUser = data;
+                localStorage.setItem('sf_crm_user', JSON.stringify(currentUser));
+                showApp(true);
+            } catch (err) {
+                loginError.textContent = err.message;
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        function showApp(isInitialLoad = false) {
+            if (isInitialLoad) {
+                loginScreen.classList.add('hidden');
+                loadingScreen.classList.remove('hidden');
+            }
+            setupUserMenu();
+            initializeApp();
+        }
+
+        function showLogin() {
+            localStorage.removeItem('sf_crm_user');
+            currentUser = null;
+            crmApp.classList.add('hidden');
+            loadingScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+        }
+
+        async function initializeApp() {
+            try {
+                const [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes] = await Promise.all([
+                    dbClient.from('sf_negociacoes').select('*'),
+                    dbClient.from('sf_colunas').select('*').order('ordem'),
+                    dbClient.from('sf_usuarios').select('*'),
+                    dbClient.from('sf_tags').select('*'),
+                    dbClient.from('sf_negociacao_tags').select('*'),
+                    dbClient.from('sf_tarefas').select('*')
+                ]);
+
+                const results = [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes];
+                for (const res of results) { if (res.error) throw res.error; }
+
+                appData = {
+                    deals: dealsRes.data,
+                    columns: columnsRes.data,
+                    users: usersRes.data,
+                    tags: tagsRes.data,
+                    deal_tags: dealTagsRes.data,
+                    tasks: tasksRes.data,
+                    history: []
+                };
+
+                loadingScreen.classList.add('hidden');
+                crmApp.classList.remove('hidden');
+                
+                setupFilters();
+                renderBoard();
+                setupEventListeners();
+                setupRealtimeSubscriptions();
+            } catch (error) {
+                loadingScreen.classList.add('hidden');
+                crmApp.classList.remove('hidden');
+                kanbanBoard.innerHTML = `<div class="bg-red-100 text-red-700 p-4 rounded-lg"><b>Erro ao carregar dados:</b> ${error.message}</div>`;
+                console.error("Erro na inicialização:", error);
+            }
+        }
+        
+        // --- LÓGICA DE TEMPO REAL (REALTIME) ---
+        function setupRealtimeSubscriptions() {
+            const channel = dbClient.channel('public-sf-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_negociacoes' }, payload => handleRealtimeChange(payload, 'deals', 'id_negocio'))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_tarefas' }, payload => handleRealtimeChange(payload, 'tasks', 'id_tarefa'))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_negociacao_tags' }, payload => handleRealtimeChange(payload, 'deal_tags', 'id_negocio_fk'))
+                .subscribe();
+        }
+
+        function handleRealtimeChange(payload, appDataKey, idKey) {
+            const { eventType, new: newRecord, old: oldRecord } = payload;
+            
+            switch (eventType) {
+                case 'INSERT':
+                    const exists = appData[appDataKey].some(item => JSON.stringify(item) === JSON.stringify(newRecord));
+                    if (!exists) appData[appDataKey].push(newRecord);
+                    break;
+                case 'UPDATE':
+                    const indexToUpdate = appData[appDataKey].findIndex(item => item[idKey] == newRecord[idKey]);
+                    if (indexToUpdate !== -1) appData[appDataKey][indexToUpdate] = newRecord;
+                    else appData[appDataKey].push(newRecord);
+                    break;
+                case 'DELETE':
+                    if (appDataKey === 'deal_tags') {
+                        appData.deal_tags = appData.deal_tags.filter(dt => !(dt.id_negocio_fk === oldRecord.id_negocio_fk && dt.id_tag_fk === oldRecord.id_tag_fk));
+                    } else {
+                        const oldId = oldRecord[idKey];
+                        if(oldId) appData[appDataKey] = appData[appDataKey].filter(item => item[idKey] != oldId);
+                    }
+                    break;
+            }
+            renderBoard(); 
+            if (!dealModal.classList.contains('hidden')) {
+                const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
+                if (openDealId) showDealModal(openDealId);
+            }
+        }
+
+        // --- RENDERIZAÇÃO DO QUADRO KANBAN E FILTROS ---
+        function renderBoard() {
+            let filteredDeals = appData.deals;
+
+            // 1. Filtrar por "Minhas Negociações"
+            if (filterOnlyMyDeals) {
+                filteredDeals = filteredDeals.filter(deal => deal.id_usuario_responsavel_fk === currentUser.id_usuario);
+            }
+            
+            // 2. Filtrar por tag
+            if (activeTagId) {
+                const dealIdsWithTag = appData.deal_tags.filter(dt => dt.id_tag_fk == activeTagId).map(dt => dt.id_negocio_fk);
+                filteredDeals = filteredDeals.filter(deal => dealIdsWithTag.includes(deal.id_negocio));
+            }
+
+            // 3. Filtrar por pesquisa de texto
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            if (searchTerm.length >= 2) {
+                filteredDeals = filteredDeals.filter(deal => deal.nome_empresa.toLowerCase().includes(searchTerm));
+            }
+
+            kanbanBoard.innerHTML = '';
+            appData.columns.forEach(column => {
+                const columnEl = document.createElement('div');
+                columnEl.className = 'kanban-column bg-slate-100 rounded-lg p-3 w-[88vw] sm:w-80 flex-shrink-0';
+                const dealsInColumn = filteredDeals.filter(d => d.id_coluna_fk === column.id_coluna);
+
+                columnEl.innerHTML = `
+                    <div class="column-header-expanded flex justify-between items-center mb-3 flex-shrink-0">
+                        <div class="flex items-center min-w-0">
+                            <h2 class="font-bold text-gray-700 truncate">${column.nome_coluna}</h2>
+                            <span class="ml-2 bg-slate-200 text-slate-600 text-sm font-semibold rounded-full px-2">${dealsInColumn.length}</span>
+                        </div>
+                        <button type="button" class="collapse-btn text-gray-400 hover:text-gray-600"><i class="fa-solid fa-angles-left"></i></button>
+                    </div>
+                    <div class="column-header-collapsed hidden flex-col items-center justify-between h-full flex-shrink-0">
+                        <div class="vertical-text font-bold text-gray-700">${column.nome_coluna}</div>
+                        <span class="bg-slate-200 text-slate-600 text-sm font-semibold rounded-full w-6 h-6 flex items-center justify-center mb-2">${dealsInColumn.length}</span>
+                    </div>
+                    <div class="kanban-cards min-h-[100px]" data-column-id="${column.id_coluna}">
+                        ${dealsInColumn.map(deal => createDealCard(deal)).join('')}
+                    </div>
+                `;
+                kanbanBoard.appendChild(columnEl);
+            });
+            initializeDragAndDrop();
+            initializeColumnControls();
+        }
+
+        function createDealCard(deal) {
+            const responsibleUser = appData.users.find(u => u.id_usuario === deal.id_usuario_responsavel_fk);
+            const nextTask = appData.tasks.find(t => t.id_negocio_fk === deal.id_negocio && !t.concluido);
+            const dealTags = appData.deal_tags.filter(dt => dt.id_negocio_fk === deal.id_negocio).map(dt => appData.tags.find(t => t.id_tag === dt.id_tag_fk)).filter(Boolean);
+            const tagsHtml = dealTags.map(tag => `<span class="text-xs font-medium mr-1 mb-1 px-2 py-0.5 rounded-full" style="background-color:${tag.cor}20; color:${tag.cor};">${tag.nome_tag}</span>`).join('');
+            
+            let responsibleHtml = '';
+            if (responsibleUser) {
+                if (responsibleUser.foto_url) {
+                    responsibleHtml = `<img src="${responsibleUser.foto_url}" alt="${responsibleUser.nome_usuario}" title="${responsibleUser.nome_usuario}" class="w-6 h-6 rounded-full object-cover">`;
+                } else {
+                    const initial = responsibleUser.nome_usuario ? responsibleUser.nome_usuario.charAt(0).toUpperCase() : '?';
+                    responsibleHtml = `<div title="${responsibleUser.nome_usuario}" class="w-6 h-6 rounded-full bg-slate-300 flex items-center justify-center text-slate-600 font-bold text-xs">${initial}</div>`;
+                }
+            }
+            
+            let followupHtml = '';
+            if (deal.fase_followup > 0) {
+                followupHtml = `<div class="followup-badge"><i class="fas fa-paper-plane text-xs"></i> Fase ${deal.fase_followup}</div>`;
+            }
+
+            return `
+                <div class="kanban-card bg-white rounded-lg p-4 mb-3 border border-gray-200 hover:border-green-400 hover:shadow-md cursor-pointer" data-deal-id="${deal.id_negocio}">
+                    <div class="flex flex-wrap gap-y-1 mb-2">${tagsHtml}</div>
+                    <h3 class="font-semibold text-gray-800">${deal.nome_empresa}</h3>
+                    <p class="text-sm text-gray-500 mb-2">${deal.nome_responsavel_empresa || 'Sem responsável'}</p>
+                    <div class="mt-2 pt-2 border-t flex justify-between items-center">
+                        <div class="flex-grow flex items-center gap-2">
+                            ${followupHtml}
+                            ${nextTask ? `<p class="text-xs text-orange-600 font-semibold"><i class="fas fa-flag mr-1"></i></p>` : ''}
+                        </div>
+                        <div class="flex-shrink-0">${responsibleHtml}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function setupFilters() {
+            const triggerBtn = document.getElementById('filter-trigger-btn');
+            const popup = document.getElementById('filter-popup');
+            const optionsContainer = document.getElementById('filter-options-container');
+            const btnText = document.getElementById('filter-btn-text');
+            const myDealsBtn = document.getElementById('my-deals-filter-btn');
+
+            // Configuração do filtro de tags
+            optionsContainer.innerHTML = `<a href="#" class="filter-tag-option text-gray-700 block px-4 py-2 text-sm" data-tag-id="">TODAS AS TAGS</a>`;
+            appData.tags.forEach(tag => {
+                const option = document.createElement('a');
+                option.href = '#';
+                option.className = 'filter-tag-option text-gray-700 block px-4 py-2 text-sm';
+                option.dataset.tagId = tag.id_tag;
+                option.innerHTML = `<div class="flex items-center"><span class="w-3 h-3 rounded-full mr-3" style="background-color: ${tag.cor};"></span><span>${tag.nome_tag}</span></div>`;
+                optionsContainer.appendChild(option);
+            });
+
+            optionsContainer.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.filter-tag-option');
+                if (!target) return;
+                activeTagId = target.dataset.tagId ? parseInt(target.dataset.tagId) : null;
+                btnText.textContent = target.textContent;
+                popup.classList.add('hidden');
+                renderBoard();
+            });
+
+            triggerBtn.addEventListener('click', () => popup.classList.toggle('hidden'));
+            document.addEventListener('click', (e) => {
+                if (!document.getElementById('filter-container').contains(e.target)) {
+                    popup.classList.add('hidden');
+                }
+            });
+
+            // Configuração do filtro "Minhas Negociações"
+            if (filterOnlyMyDeals) {
+                myDealsBtn.classList.add('active');
+            }
+            myDealsBtn.addEventListener('click', () => {
+                filterOnlyMyDeals = !filterOnlyMyDeals;
+                myDealsBtn.classList.toggle('active');
+                renderBoard();
+            });
+        }
+
+        // --- LÓGICA DO DRAG-AND-DROP E CONTROLES DE COLUNA ---
+        function initializeDragAndDrop() {
+            document.querySelectorAll('.kanban-cards').forEach(column => {
+                new Sortable(column, {
+                    group: 'kanban', animation: 150,
+                    onEnd: async (evt) => {
+                        const { item, to, from } = evt;
+                        const dealId = item.dataset.dealId;
+                        const newColumnId = to.dataset.columnId;
+                        const originalColumnId = from.dataset.columnId;
+                        
+                        try {
+                            const { error } = await dbClient.from('sf_negociacoes').update({ id_coluna_fk: newColumnId, updated_at: new Date().toISOString() }).eq('id_negocio', dealId);
+                            if (error) throw error;
+                            
+                            const fromColumn = appData.columns.find(c => c.id_coluna == originalColumnId);
+                            const toColumn = appData.columns.find(c => c.id_coluna == newColumnId);
+                            await addHistoryEntry(dealId, 'Status Alterado', `Status alterado de "${fromColumn.nome_coluna}" para "${toColumn.nome_coluna}".`);
+                        } catch (error) {
+                            showToast('Erro ao atualizar status.');
+                            console.error("Erro ao mover card:", error);
+                            renderBoard();
+                        }
+                    }
+                });
+            });
+        }
+        
+        function initializeColumnControls() {
+            kanbanBoard.addEventListener('click', (e) => {
+                const collapseBtn = e.target.closest('.collapse-btn');
+                if (collapseBtn) {
+                    e.stopPropagation();
+                    collapseBtn.closest('.kanban-column').classList.toggle('collapsed');
+                    return;
+                }
+                
+                const collapsedColumn = e.target.closest('.kanban-column.collapsed');
+                if (collapsedColumn) {
+                    collapsedColumn.classList.remove('collapsed');
+                }
+            });
+        }
+        
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            searchInput.addEventListener('input', renderBoard);
+            kanbanBoard.addEventListener('click', (e) => {
+                const card = e.target.closest('.kanban-card');
+                if (card) {
+                    showDealModal(card.dataset.dealId);
+                }
+            });
+            dealModal.addEventListener('click', (e) => {
+                if (e.target === dealModal) hideDealModal();
+            });
+            document.getElementById('add-deal-btn').addEventListener('click', () => showDealModal(null));
+        }
+        
+        function setupUserMenu() {
+            const userAvatarBtn = document.getElementById('user-avatar-btn');
+            const logoutPopup = document.getElementById('logout-popup');
+            
+            const userInitial = currentUser.nome_usuario ? currentUser.nome_usuario.charAt(0).toUpperCase() : '?';
+            userAvatarBtn.innerHTML = currentUser.foto_url ? `<img src="${currentUser.foto_url}" class="w-full h-full object-cover">` : `<span>${userInitial}</span>`;
+            document.getElementById('popup-user-name').textContent = currentUser.nome_usuario;
+            document.getElementById('popup-user-email').textContent = currentUser.email;
+
+            userAvatarBtn.addEventListener('click', () => logoutPopup.classList.toggle('hidden'));
+            document.getElementById('popup-logout-btn').addEventListener('click', (e) => { e.preventDefault(); showLogin(); });
+        }
+
+        // --- LÓGICA DO MODAL DE NEGOCIAÇÃO ---
+        async function showDealModal(dealId) {
+            dealModalContent.innerHTML = loaderTemplate.content.cloneNode(true).outerHTML;
+            dealModal.classList.remove('hidden');
+            requestAnimationFrame(() => dealModalContent.classList.remove('scale-95', 'opacity-0'));
+
+            let deal = { id_coluna_fk: 1, fase_followup: 0 };
+            if (dealId) {
+                deal = appData.deals.find(d => d.id_negocio === dealId);
+                if (!deal) {
+                    showToast("Negociação não encontrada.");
+                    hideDealModal();
+                    return;
+                }
+                const { data: historyData, error } = await dbClient.from('sf_historico_negociacao').select('*, sf_usuarios(nome_usuario)').eq('id_negocio_fk', dealId).order('timestamp', { ascending: false });
+                appData.history = error ? [] : historyData;
+            } else {
+                appData.history = [];
+            }
+
+            const tasksForDeal = appData.tasks.filter(t => t.id_negocio_fk === dealId);
+            const usersOptions = appData.users.map(u => `<option value="${u.id_usuario}" ${deal.id_usuario_responsavel_fk === u.id_usuario ? 'selected' : ''}>${u.nome_usuario}</option>`).join('');
+            const columnsOptions = appData.columns.map(c => `<option value="${c.id_coluna}" ${deal.id_coluna_fk === c.id_coluna ? 'selected' : ''}>${c.nome_coluna}</option>`).join('');
+            const dealTagIds = appData.deal_tags.filter(dt => dt.id_negocio_fk === dealId).map(dt => dt.id_tag_fk);
+            const tagsCheckboxesHtml = appData.tags.map(tag => `
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="deal-tag-checkbox" data-tag-id="${tag.id_tag}" ${dealTagIds.includes(tag.id_tag) ? 'checked' : ''}>
+                    <span class="text-sm font-medium px-2 py-0.5 rounded-full" style="background-color:${tag.cor}20; color:${tag.cor};">${tag.nome_tag}</span>
+                </label>
+            `).join('');
+
+            dealModalContent.innerHTML = `
+                <form data-deal-id="${dealId || ''}" class="flex flex-col h-full">
+                    <div class="p-6 border-b flex justify-between items-center flex-shrink-0">
+                        <div class="flex items-center gap-4">
+                             <h2 class="text-2xl font-bold text-gray-800">${dealId ? deal.nome_empresa : 'Nova Negociação'}</h2>
+                             <div class="flex items-center gap-2">
+                                <span class="text-sm font-semibold text-gray-600">Ativar Follow-up</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="followup-toggle" ${deal.fase_followup > 0 ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                             </div>
+                        </div>
+                        <button type="button" id="close-deal-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                    </div>
+                    <div class="border-b border-gray-200 flex-shrink-0"><nav class="modal-tabs flex space-x-4 px-6 -mb-px"><button type="button" data-tab="details" class="tab-button active">Detalhes</button><button type="button" data-tab="tasks" class="tab-button">Tarefas <span id="task-badge" class="tab-badge">${tasksForDeal.length}</span></button><button type="button" data-tab="history" class="tab-button">Histórico</button></nav></div>
+                    <div class="p-6 overflow-y-auto flex-grow">
+                        <div id="tab-content-details" class="tab-content active space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div><label class="font-medium">Nome da Empresa</label><input name="nome_empresa" value="${deal.nome_empresa || ''}" class="form-input" required></div>
+                                <div><label class="font-medium">Nome do Responsável</label><input name="nome_responsavel_empresa" value="${deal.nome_responsavel_empresa || ''}" class="form-input"></div>
+                                <div><label class="font-medium">Telefone</label><input name="telefone_responsavel" value="${deal.telefone_responsavel || ''}" class="form-input"></div>
+                                <div><label class="font-medium">Rede Social (Link)</label><input name="redesocial" value="${deal.redesocial || ''}" class="form-input"></div>
+                                <div><label class="font-medium">Responsável CRM</label><select name="id_usuario_responsavel_fk" class="form-input"><option value="">Nenhum</option>${usersOptions}</select></div>
+                                <div><label class="font-medium">Status</label><select name="id_coluna_fk" class="form-input">${columnsOptions}</select></div>
+                            </div>
+                            <div>
+                                <label class="font-medium">Tags</label>
+                                <div class="mt-2 p-3 bg-slate-50 rounded-lg flex flex-wrap gap-4">${tagsCheckboxesHtml}</div>
+                            </div>
+                        </div>
+                        <div id="tab-content-tasks" class="tab-content"><div id="task-list-container" class="space-y-2 mb-4"></div><div class="flex gap-2"><input id="new-task-title" class="form-input flex-grow" placeholder="Nova tarefa..."><button type="button" id="add-task-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 rounded-lg font-semibold">Add</button></div></div>
+                        <div id="tab-content-history" class="tab-content"><div id="history-list-container" class="space-y-3 mb-4"></div><div class="flex gap-2"><textarea id="new-history-note" class="form-input flex-grow" placeholder="Adicionar uma nota..."></textarea><button type="button" id="add-note-btn" class="bg-blue-500 text-white px-4 rounded-lg font-semibold">Salvar</button></div></div>
+                    </div>
+                    <div class="p-4 border-t bg-slate-50 flex justify-end items-center gap-3 flex-shrink-0">
+                        ${dealId ? `<button type="button" id="delete-deal-btn" class="text-red-500 hover:text-red-700 font-semibold mr-auto">Excluir</button>` : ''}
+                        <button type="button" id="cancel-deal-btn" class="px-4 py-2 text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full font-semibold">Cancelar</button>
+                        <button type="submit" id="save-deal-btn" class="px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-full font-semibold">Salvar</button>
+                    </div>
+                </form>
+            `;
+            
+            renderTasks(dealId);
+            renderHistory(dealId);
+            setupModalTabs();
+            setupModalActions(dealId);
+        }
+
+        function hideDealModal() {
+            dealModalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => dealModal.classList.add('hidden'), 300);
+        }
+        
+        function setupModalTabs() {
+            const tabs = dealModalContent.querySelectorAll('.tab-button');
+            const contents = dealModalContent.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    dealModalContent.querySelector(`#tab-content-${tab.dataset.tab}`).classList.add('active');
+                });
+            });
+        }
+        
+        function setupModalActions(dealId) {
+            const form = dealModalContent.querySelector('form');
+            form.addEventListener('submit', (e) => { e.preventDefault(); handleSaveDeal(dealId); });
+            
+            document.getElementById('close-deal-modal-btn').addEventListener('click', hideDealModal);
+            document.getElementById('cancel-deal-btn').addEventListener('click', hideDealModal);
+            
+            if (dealId) {
+                document.getElementById('delete-deal-btn').addEventListener('click', () => handleDeleteDeal(dealId));
+                document.querySelectorAll('.deal-tag-checkbox').forEach(cb => {
+                    cb.addEventListener('change', (e) => handleTagChange(dealId, e.target.dataset.tagId, e.target.checked));
+                });
+                document.getElementById('followup-toggle').addEventListener('change', (e) => handleFollowupToggle(dealId, e.target.checked));
+            }
+            
+            document.getElementById('add-task-btn').addEventListener('click', () => handleAddTask(dealId));
+            document.getElementById('add-note-btn').addEventListener('click', () => handleAddNote(dealId));
+            
+            const taskListContainer = document.getElementById('task-list-container');
+            taskListContainer.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-task-btn');
+                if (editBtn) {
+                    showTaskEditorModal(editBtn.dataset.taskId, editBtn.dataset.dealId);
+                }
+
+                const deleteBtn = e.target.closest('.delete-task-btn');
+                if (deleteBtn) {
+                    handleDeleteTask(deleteBtn.dataset.taskId, deleteBtn.dataset.dealId);
+                }
+            });
+             taskListContainer.addEventListener('change', (e) => {
+                const checkbox = e.target.closest('.task-checkbox');
+                if (checkbox) {
+                    handleToggleTask(checkbox.dataset.taskId, checkbox.checked);
+                }
+            });
+        }
+
+        async function handleSaveDeal(dealId) {
+            const form = dealModalContent.querySelector('form');
+            const formData = new FormData(form);
+            const dealData = Object.fromEntries(formData.entries());
+            dealData.updated_at = new Date().toISOString();
+
+            try {
+                if (dealId) {
+                    const { error } = await dbClient.from('sf_negociacoes').update(dealData).eq('id_negocio', dealId);
+                    if (error) throw error;
+                    showToast("Negociação atualizada!");
+                } else {
+                    const { data, error } = await dbClient.from('sf_negociacoes').insert(dealData).select().single();
+                    if (error) throw error;
+                    await addHistoryEntry(data.id_negocio, 'Criação', 'Negociação criada.');
+                    showToast("Negociação criada!");
+                }
+                hideDealModal();
+            } catch (error) {
+                showToast("Erro ao salvar: " + error.message);
+                console.error(error);
+            }
+        }
+        
+        async function handleDeleteDeal(dealId) {
+            if (confirm("Tem certeza que deseja excluir esta negociação?")) {
+                try {
+                    const { error } = await dbClient.from('sf_negociacoes').delete().eq('id_negocio', dealId);
+                    if (error) throw error;
+                    showToast("Negociação excluída.");
+                    hideDealModal();
+                } catch (error) {
+                    showToast("Erro ao excluir: " + error.message);
+                }
+            }
+        }
+        
+        async function handleTagChange(dealId, tagId, isChecked) {
+            const record = { id_negocio_fk: dealId, id_tag_fk: tagId };
+            if (isChecked) {
+                await dbClient.from('sf_negociacao_tags').insert(record);
+            } else {
+                await dbClient.from('sf_negociacao_tags').delete().match(record);
+            }
+        }
+
+        async function handleFollowupToggle(dealId, isChecked) {
+            const newPhase = isChecked ? 1 : 0;
+            const { error } = await dbClient.from('sf_negociacoes').update({ fase_followup: newPhase }).eq('id_negocio', dealId);
+
+            if (error) {
+                showToast("Erro ao atualizar follow-up.");
+            } else {
+                const dealIndex = appData.deals.findIndex(d => d.id_negocio === dealId);
+                if (dealIndex > -1) {
+                    appData.deals[dealIndex].fase_followup = newPhase;
+                }
+                const message = isChecked ? "Follow-up ativado." : "Follow-up desativado.";
+                showToast(message);
+                await addHistoryEntry(dealId, "Follow-up", message);
+                renderBoard();
+            }
+        }
+        
+        // --- LÓGICA DE TAREFAS (VIEW, ADD, EDIT, DELETE) ---
+        function renderTasks(dealId) {
+            const container = document.getElementById('task-list-container');
+            if (!container) return;
+            
+            const allTasks = appData.tasks.filter(t => t.id_negocio_fk === dealId);
+            document.getElementById('task-badge').textContent = allTasks.length;
+
+            const pendingTasks = allTasks.filter(t => !t.concluido);
+            const completedTasks = allTasks.filter(t => t.concluido);
+
+            pendingTasks.sort((a, b) => {
+                if (a.prazo_final && b.prazo_final) return new Date(a.prazo_final) - new Date(b.prazo_final);
+                if (a.prazo_final) return -1;
+                if (b.prazo_final) return 1;
+                return 0;
+            });
+
+            const createTaskHtml = (task) => {
+                const responsibleUser = appData.users.find(u => u.id_usuario === task.id_usuario_responsavel_fk);
+                const dueDate = task.prazo_final ? new Date(task.prazo_final).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : null;
+                
+                let detailsHtml = '';
+                if (dueDate || responsibleUser) {
+                    detailsHtml += '<span class="text-xs text-gray-500 ml-2">';
+                    if (dueDate) detailsHtml += `<i class="far fa-calendar-alt mr-1"></i>${dueDate}`;
+                    if (dueDate && responsibleUser) detailsHtml += ' &bull; ';
+                    if (responsibleUser) detailsHtml += `<i class="far fa-user mr-1"></i>${responsibleUser.nome_usuario}`;
+                    detailsHtml += '</span>';
+                }
+
+                return `
+                <div class="flex items-center p-2 bg-slate-50 rounded-md group">
+                    <input type="checkbox" data-task-id="${task.id_tarefa}" class="task-checkbox h-4 w-4 mr-3 flex-shrink-0" ${task.concluido ? 'checked' : ''}>
+                    <div class="flex-grow">
+                        <span class="${task.concluido ? 'line-through text-gray-400' : ''}">${task.titulo_tarefa}</span>
+                        ${detailsHtml}
+                    </div>
+                    <div class="task-controls opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" class="edit-task-btn text-gray-400 hover:text-blue-500 p-1" data-task-id="${task.id_tarefa}" data-deal-id="${dealId}"><i class="fas fa-pencil-alt"></i></button>
+                        <button type="button" class="delete-task-btn text-gray-400 hover:text-red-500 p-1" data-task-id="${task.id_tarefa}" data-deal-id="${dealId}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            };
+
+            let finalHtml = '';
+            if (pendingTasks.length > 0) {
+                finalHtml += pendingTasks.map(createTaskHtml).join('');
+            }
+
+            if (completedTasks.length > 0) {
+                if(pendingTasks.length > 0) {
+                    finalHtml += `<div class="mt-4 pt-2 border-t"><h4 class="text-sm font-semibold text-gray-500 mb-2">Concluídas</h4></div>`;
+                }
+                finalHtml += completedTasks.map(createTaskHtml).join('');
+            }
+
+            if (allTasks.length === 0) {
+                finalHtml = '<p class="text-gray-500 text-center">Nenhuma tarefa.</p>';
+            }
+
+            container.innerHTML = finalHtml;
+        }
+        
+        async function handleToggleTask(taskId, isChecked) {
+            const { error } = await dbClient.from('sf_tarefas').update({ concluido: isChecked }).eq('id_tarefa', taskId);
+            if (!error) {
+                const taskIndex = appData.tasks.findIndex(t => t.id_tarefa === taskId);
+                if (taskIndex > -1) {
+                    appData.tasks[taskIndex].concluido = isChecked;
+                    const dealId = appData.tasks[taskIndex].id_negocio_fk;
+                    renderTasks(dealId); // Re-renderiza para mover a tarefa entre seções
+                }
+            }
+        }
+        
+        async function handleDeleteTask(taskId, dealId) {
+            if (!confirm("Tem certeza que deseja excluir esta tarefa?")) return;
+            const { error } = await dbClient.from('sf_tarefas').delete().eq('id_tarefa', taskId);
+            if (error) {
+                showToast("Erro ao excluir tarefa.");
+            } else {
+                showToast("Tarefa excluída.");
+                appData.tasks = appData.tasks.filter(t => t.id_tarefa !== taskId);
+                renderTasks(dealId);
+            }
+        }
+        
+        async function handleAddTask(dealId) {
+            const titleInput = document.getElementById('new-task-title');
+            if (!titleInput.value.trim() || !dealId) return;
+            
+            const taskData = { id_negocio_fk: dealId, titulo_tarefa: titleInput.value.trim(), id_usuario_responsavel_fk: currentUser.id_usuario };
+            const { data, error } = await dbClient.from('sf_tarefas').insert(taskData).select().single();
+            
+            if (error) {
+                showToast("Erro ao adicionar tarefa.");
+            } else {
+                appData.tasks.push(data);
+                renderTasks(dealId);
+                titleInput.value = '';
+                await addHistoryEntry(dealId, 'Tarefa Adicionada', `Tarefa "${data.titulo_tarefa}" foi criada.`);
+            }
+        }
+        
+        function showTaskEditorModal(taskId, dealId) {
+            const task = appData.tasks.find(t => t.id_tarefa === taskId);
+            if (!task) return;
+
+            const editorModal = document.getElementById('task-editor-modal');
+            const editorContent = document.getElementById('task-editor-content');
+            
+            const usersOptions = appData.users.map(user => `<option value="${user.id_usuario}" ${task.id_usuario_responsavel_fk === user.id_usuario ? 'selected' : ''}>${user.nome_usuario}</option>`).join('');
+            const deadline = task.prazo_final ? task.prazo_final.split('T')[0] : '';
+            
+            editorContent.innerHTML = `
+                <form id="task-editor-form" data-task-id="${taskId}" data-deal-id="${dealId}">
+                    <div class="p-6 border-b"><h3 class="text-xl font-bold">Editar Tarefa</h3></div>
+                    <div class="p-6 space-y-4">
+                        <div><label class="font-medium">Título da Tarefa</label><input type="text" id="edit-task-title" value="${task.titulo_tarefa}" class="form-input" required></div>
+                        <div><label class="font-medium">Prazo Final</label><input type="date" id="edit-task-deadline" value="${deadline}" class="form-input"></div>
+                        <div><label class="font-medium">Responsável</label><select id="edit-task-responsible" class="form-input"><option value="">Nenhum</option>${usersOptions}</select></div>
+                    </div>
+                    <div class="p-4 bg-slate-50 flex justify-end gap-3">
+                        <button type="button" id="cancel-edit-task-btn" class="px-4 py-2 text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full font-semibold">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-full font-semibold">Salvar Alterações</button>
+                    </div>
+                </form>
+            `;
+
+            editorModal.classList.remove('hidden');
+            requestAnimationFrame(() => editorContent.classList.remove('scale-95', 'opacity-0'));
+
+            document.getElementById('task-editor-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleUpdateTask(taskId, dealId);
+            });
+            document.getElementById('cancel-edit-task-btn').addEventListener('click', hideTaskEditorModal);
+        }
+
+        function hideTaskEditorModal() {
+            const editorModal = document.getElementById('task-editor-modal');
+            const editorContent = document.getElementById('task-editor-content');
+            editorContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => editorModal.classList.add('hidden'), 300);
+        }
+        
+        async function handleUpdateTask(taskId, dealId) {
+            const updatedData = {
+                titulo_tarefa: document.getElementById('edit-task-title').value,
+                prazo_final: document.getElementById('edit-task-deadline').value || null,
+                id_usuario_responsavel_fk: document.getElementById('edit-task-responsible').value || null
+            };
+            
+            const { data, error } = await dbClient.from('sf_tarefas').update(updatedData).eq('id_tarefa', taskId).select().single();
+            
+            if (error) {
+                showToast("Erro ao atualizar tarefa.");
+            } else {
+                showToast("Tarefa atualizada com sucesso!");
+                const taskIndex = appData.tasks.findIndex(t => t.id_tarefa === taskId);
+                if (taskIndex > -1) appData.tasks[taskIndex] = data;
+                hideTaskEditorModal();
+                renderTasks(dealId);
+            }
+        }
+        
+        // --- LÓGICA DE HISTÓRICO ---
+        function renderHistory(dealId) {
+            const container = document.getElementById('history-list-container');
+            if (!container) return;
+            const history = appData.history.filter(h => h.id_negocio_fk === dealId);
+            container.innerHTML = history.length > 0
+                ? history.map(entry => `
+                    <div class="p-2 bg-slate-50 rounded-md">
+                        <p class="text-sm">${entry.descricao}</p>
+                        <p class="text-xs text-gray-500 mt-1">${entry.sf_usuarios?.nome_usuario || 'Sistema'} - ${new Date(entry.timestamp).toLocaleString('pt-BR')}</p>
+                    </div>
+                `).join('')
+                : '<p class="text-gray-500 text-center">Nenhum histórico.</p>';
+        }
+        
+        async function handleAddNote(dealId) {
+            const noteInput = document.getElementById('new-history-note');
+            if (!noteInput.value.trim() || !dealId) return;
+            
+            const description = noteInput.value.trim();
+            await addHistoryEntry(dealId, 'Nota Adicionada', description);
+            noteInput.value = '';
+        }
+
+        async function addHistoryEntry(dealId, type, description) {
+            const historyData = { id_negocio_fk: dealId, tipo_alteracao: type, descricao: description, id_usuario_fk: currentUser.id_usuario };
+            const { data, error } = await dbClient.from('sf_historico_negociacao').insert(historyData).select('*, sf_usuarios(nome_usuario)').single();
+            if (error) {
+                console.error("Erro ao salvar histórico: ", error);
+            } else if (!dealModal.classList.contains('hidden')) {
+                appData.history.unshift(data); // Adiciona no início
+                renderHistory(dealId);
+            }
+        }
+
+    </script>
+</body>
+</html>
