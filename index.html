@@ -187,41 +187,41 @@
             
             <div class="w-full md:w-auto md:flex-1 flex justify-center px-0 md:px-4 order-3 md:order-2">
                  <div class="flex items-center gap-2 w-full max-w-lg">
-                    <div id="filter-container" class="relative flex-shrink-0">
-                         <button id="filter-trigger-btn" class="flex items-center justify-center w-full px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                             <span id="filter-btn-text">TODAS AS TAGS</span>
-                             <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
-                         </button>
-                         <div id="filter-popup" class="hidden popup-menu absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                             <div id="filter-options-container" class="py-1"></div>
-                         </div>
-                    </div>
-                    <div class="relative flex-grow">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400"></i></div>
-                        <input type="search" id="search-input" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400" placeholder="Pesquisar por empresa...">
-                    </div>
-                    <button id="my-deals-filter-btn" title="Filtrar minhas negociações" class="filter-btn flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-300 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors">
-                        <i class="fas fa-user"></i>
-                    </button>
-                </div>
+                     <div id="filter-container" class="relative flex-shrink-0">
+                          <button id="filter-trigger-btn" class="flex items-center justify-center w-full px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                               <span id="filter-btn-text">TODAS AS TAGS</span>
+                               <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
+                          </button>
+                          <div id="filter-popup" class="hidden popup-menu absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                               <div id="filter-options-container" class="py-1"></div>
+                          </div>
+                     </div>
+                     <div class="relative flex-grow">
+                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400"></i></div>
+                         <input type="search" id="search-input" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400" placeholder="Pesquisar por empresa...">
+                     </div>
+                     <button id="my-deals-filter-btn" title="Filtrar minhas negociações" class="filter-btn flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-300 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors">
+                         <i class="fas fa-user"></i>
+                     </button>
+                 </div>
             </div>
 
             <div class="flex items-center space-x-2 sm:space-x-4 justify-end order-2 md:order-3">
                  <button id="add-deal-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full flex items-center">
-                    <i class="fas fa-plus mr-2"></i> Nova
-                </button>
-                <div id="user-menu-container" class="relative">
-                    <button id="user-avatar-btn" class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 overflow-hidden"></button>
-                    <div id="logout-popup" class="hidden popup-menu absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
-                        <div class="py-1">
-                            <div class="px-4 py-2 border-b">
-                                <p id="popup-user-name" class="text-sm font-semibold text-gray-900 truncate"></p>
-                                <p id="popup-user-email" class="text-sm text-gray-500 truncate"></p>
-                            </div>
-                            <a href="#" id="popup-logout-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sair</a>
-                        </div>
-                    </div>
-                </div>
+                     <i class="fas fa-plus mr-2"></i> Nova
+                 </button>
+                 <div id="user-menu-container" class="relative">
+                     <button id="user-avatar-btn" class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 overflow-hidden"></button>
+                     <div id="logout-popup" class="hidden popup-menu absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20">
+                         <div class="py-1">
+                             <div class="px-4 py-2 border-b">
+                                 <p id="popup-user-name" class="text-sm font-semibold text-gray-900 truncate"></p>
+                                 <p id="popup-user-email" class="text-sm text-gray-500 truncate"></p>
+                             </div>
+                             <a href="#" id="popup-logout-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sair</a>
+                         </div>
+                     </div>
+                 </div>
             </div>
         </header>
 
@@ -236,6 +236,18 @@
     <!-- Modal de Edição de Tarefa -->
     <div id="task-editor-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-30">
         <div id="task-editor-content" class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col transform transition-all duration-300 ease-in-out scale-95 opacity-0"></div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all duration-300 ease-in-out scale-95 opacity-0">
+            <h3 class="text-lg font-bold text-gray-900">Confirmar Exclusão</h3>
+            <p class="text-gray-600 my-4">Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-delete-btn" class="px-6 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-full font-semibold">Cancelar</button>
+                <button id="confirm-delete-btn" class="px-6 py-2 text-white bg-red-600 hover:bg-red-700 rounded-full font-semibold">Excluir</button>
+            </div>
+        </div>
     </div>
     
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2 transition-all duration-300 z-40"></div>
@@ -262,11 +274,14 @@
         const searchInput = document.getElementById('search-input');
         const loaderTemplate = document.getElementById('loader-template');
         const toast = document.getElementById('toast');
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
         
         let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [] };
         let currentUser = null;
         let activeTagId = null;
-        let filterOnlyMyDeals = true; // Filtro de "minhas negociações" ativo por padrão
+        let filterOnlyMyDeals = true;
+        let taskToDelete = { taskId: null, dealId: null };
+
 
         // --- FUNÇÕES DE UTILIDADE ---
         function showToast(message) {
@@ -403,7 +418,7 @@
             renderBoard(); 
             if (!dealModal.classList.contains('hidden')) {
                 const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
-                if (openDealId && (newRecord?.id_negocio_fk === openDealId || newRecord?.id_negocio === openDealId || oldRecord?.id_negocio_fk === openDealId || oldRecord?.id_negocio === openDealId)) {
+                if (openDealId && (newRecord?.id_negocio_fk == openDealId || newRecord?.id_negocio == openDealId || oldRecord?.id_negocio_fk == openDealId || oldRecord?.id_negocio == openDealId)) {
                    showDealModal(openDealId);
                 }
             }
@@ -456,37 +471,146 @@
         }
 
         function createDealCard(deal) {
+            // --- DADOS DO CARD ---
             const responsibleUser = appData.users.find(u => u.id_usuario === deal.id_usuario_responsavel_fk);
-            const nextTask = appData.tasks.find(t => t.id_negocio_fk === deal.id_negocio && !t.concluido);
             const dealTags = appData.deal_tags.filter(dt => dt.id_negocio_fk === deal.id_negocio).map(dt => appData.tags.find(t => t.id_tag === dt.id_tag_fk)).filter(Boolean);
-            const tagsHtml = dealTags.map(tag => `<span class="text-xs font-medium mr-1 mb-1 px-2 py-0.5 rounded-full" style="background-color:${tag.cor}20; color:${tag.cor};">${tag.nome_tag}</span>`).join('');
             
-            let responsibleHtml = '';
-            if (responsibleUser) {
-                if (responsibleUser.foto_url) {
-                    responsibleHtml = `<img src="${responsibleUser.foto_url}" alt="${responsibleUser.nome_usuario}" title="${responsibleUser.nome_usuario}" class="w-6 h-6 rounded-full object-cover">`;
-                } else {
-                    const initial = responsibleUser.nome_usuario ? responsibleUser.nome_usuario.charAt(0).toUpperCase() : '?';
-                    responsibleHtml = `<div title="${responsibleUser.nome_usuario}" class="w-6 h-6 rounded-full bg-slate-300 flex items-center justify-center text-slate-600 font-bold text-xs">${initial}</div>`;
-                }
-            }
-            
+            // --- LÓGICA DE FOLLOW-UP ---
             let followupHtml = '';
             if (deal.fase_followup > 0) {
                 followupHtml = `<div class="followup-badge"><i class="fas fa-paper-plane text-xs"></i> Fase ${deal.fase_followup}</div>`;
             }
 
-            return `
-                <div class="kanban-card bg-white rounded-lg p-4 mb-3 border border-gray-200 hover:border-green-400 hover:shadow-md cursor-pointer" data-deal-id="${deal.id_negocio}">
-                    <div class="flex flex-wrap gap-y-1 mb-2">${tagsHtml}</div>
-                    <h3 class="font-semibold text-gray-800">${deal.nome_empresa}</h3>
-                    <p class="text-sm text-gray-500 mb-2">${deal.nome_responsavel_empresa || 'Sem responsável'}</p>
-                    <div class="mt-2 pt-2 border-t flex justify-between items-center">
-                        <div class="flex-grow flex items-center gap-2">
-                            ${followupHtml}
-                            ${nextTask ? `<p class="text-xs text-orange-600 font-semibold"><i class="fas fa-flag mr-1"></i></p>` : ''}
+            // --- LÓGICA DO AVATAR ---
+            let responsibleHtml = '';
+            if (responsibleUser) {
+                if (responsibleUser.foto_url) {
+                    responsibleHtml = `<img src="${responsibleUser.foto_url}" alt="${responsibleUser.nome_usuario}" title="${responsibleUser.nome_usuario}" class="w-7 h-7 rounded-full object-cover">`;
+                } else {
+                    const initial = responsibleUser.nome_usuario ? responsibleUser.nome_usuario.charAt(0).toUpperCase() : '?';
+                    responsibleHtml = `<div title="${responsibleUser.nome_usuario}" class="w-7 h-7 rounded-full bg-slate-300 flex items-center justify-center text-slate-600 font-bold text-sm">${initial}</div>`;
+                }
+            }
+
+            // --- LÓGICA DA PRÓXIMA TAREFA ---
+            let nextTaskHtml = '';
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const pendingTasks = appData.tasks.filter(t => t.id_negocio_fk === deal.id_negocio && !t.concluido);
+            
+            const futureTasks = pendingTasks.filter(t => t.prazo_final && new Date(t.prazo_final) >= today).sort((a, b) => new Date(a.prazo_final) - new Date(b.prazo_final));
+            const overdueTasks = pendingTasks.filter(t => t.prazo_final && new Date(t.prazo_final) < today).sort((a, b) => new Date(b.prazo_final) - new Date(a.prazo_final));
+            const noDateTasks = pendingTasks.filter(t => !t.prazo_final);
+
+            const nextTask = futureTasks[0] || overdueTasks[0] || noDateTasks[0] || null;
+
+            if (nextTask) {
+                let taskBadgeColorClass = 'bg-slate-500';
+                let daysRemainingText = '';
+
+                if (!nextTask.prazo_final) {
+                    taskBadgeColorClass = 'bg-red-500';
+                    daysRemainingText = 'Sem data';
+                } else {
+                    const dueDate = new Date(nextTask.prazo_final);
+                    dueDate.setUTCHours(12,0,0,0);
+                    today.setUTCHours(12,0,0,0);
+                    
+                    const diffTime = dueDate.getTime() - today.getTime();
+                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays < 0) {
+                        taskBadgeColorClass = 'bg-red-500';
+                        daysRemainingText = `Vencido`;
+                    } else if (diffDays === 0) {
+                        taskBadgeColorClass = 'bg-red-500';
+                        daysRemainingText = `Hoje`;
+                    } else if (diffDays === 1) {
+                        taskBadgeColorClass = 'bg-red-500';
+                        daysRemainingText = `${diffDays} dia`;
+                    } else if (diffDays <= 3) {
+                        taskBadgeColorClass = 'bg-red-500';
+                        daysRemainingText = `${diffDays} dias`;
+                    } else if (diffDays <= 7) {
+                        taskBadgeColorClass = 'bg-yellow-500';
+                        daysRemainingText = `${diffDays} dias`;
+                    } else {
+                        daysRemainingText = `${diffDays} dias`;
+                    }
+                }
+
+                nextTaskHtml = `
+                    <div class="task-wrapper relative group text-xs">
+                        <!-- Normal Display -->
+                        <div class="task-display transition-opacity duration-200 ease-in-out group-hover:opacity-0">
+                            <div class="flex items-center justify-between gap-2 p-2 rounded-md bg-slate-100">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <i class="far fa-flag fa-sm w-4 text-center text-slate-500"></i>
+                                    <span class="font-semibold flex-grow truncate text-slate-700" title="${nextTask.titulo_tarefa}">${nextTask.titulo_tarefa}</span>
+                                </div>
+                                <span class="font-bold flex-shrink-0 px-2 py-0.5 rounded-full text-white text-[10px] ${taskBadgeColorClass}">${daysRemainingText}</span>
+                            </div>
                         </div>
-                        <div class="flex-shrink-0">${responsibleHtml}</div>
+
+                        <!-- Hover Actions -->
+                        <div class="task-actions absolute inset-0 flex opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out rounded-md overflow-hidden">
+                            <button type="button" class="complete-task-btn-card flex items-center justify-center w-1/3 h-full bg-green-500 hover:bg-green-600 text-white" title="Concluir Tarefa" data-task-id="${nextTask.id_tarefa}">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button type="button" class="edit-task-btn-card flex items-center justify-center w-1/3 h-full bg-yellow-500 hover:bg-yellow-600 text-white" title="Editar Tarefa" data-task-id="${nextTask.id_tarefa}" data-deal-id="${deal.id_negocio}">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button type="button" class="delete-task-btn-card flex items-center justify-center w-1/3 h-full bg-red-500 hover:bg-red-600 text-white" title="Excluir Tarefa" data-task-id="${nextTask.id_tarefa}" data-deal-id="${deal.id_negocio}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // --- LÓGICA DO BOTÃO WHATSAPP ---
+            let whatsappHtml = '';
+            if (deal.telefone_responsavel) {
+                let cleanPhone = deal.telefone_responsavel.replace(/\D/g, '');
+                if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
+                    cleanPhone = '55' + cleanPhone;
+                }
+                if (cleanPhone.length >= 12) {
+                    const whatsappUrl = `https://web.whatsapp.com/send?phone=${cleanPhone}`;
+                    whatsappHtml = `
+                        <a href="${whatsappUrl}" target="_blank" class="whatsapp-btn text-green-500 hover:text-green-600 text-2xl" title="Conversar no WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    `;
+                }
+            }
+            
+            // --- MONTAGEM DO CARD ---
+            const tagsHtml = dealTags.map(tag => `<span class="text-xs font-medium mr-1 mb-1 px-2 py-0.5 rounded-full" style="background-color:${tag.cor}20; color:${tag.cor};">${tag.nome_tag}</span>`).join('');
+
+            return `
+                <div class="kanban-card bg-white rounded-lg p-3 mb-3 border border-gray-200 hover:border-green-400 hover:shadow-md cursor-pointer flex flex-col justify-between min-h-[150px]" data-deal-id="${deal.id_negocio}">
+                    <div>
+                        <div class="flex flex-wrap gap-y-1 mb-2">${tagsHtml}</div>
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="font-semibold text-gray-800 pr-2 flex-grow">${deal.nome_empresa}</h3>
+                            <div class="flex-shrink-0">${followupHtml}</div>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-2">${deal.nome_responsavel_empresa || 'Sem responsável'}</p>
+                    </div>
+                    
+                    <div class="flex-grow my-2">
+                        ${nextTaskHtml}
+                    </div>
+
+                    <div class="mt-auto pt-2 border-t border-gray-200 flex justify-between items-center">
+                        <div>
+                            ${whatsappHtml}
+                        </div>
+                        <div>
+                            ${responsibleHtml}
+                        </div>
                     </div>
                 </div>
             `;
@@ -583,16 +707,49 @@
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
             searchInput.addEventListener('input', renderBoard);
+            
             kanbanBoard.addEventListener('click', (e) => {
+                const whatsappBtn = e.target.closest('.whatsapp-btn');
+                const completeBtn = e.target.closest('.complete-task-btn-card');
+                const editBtn = e.target.closest('.edit-task-btn-card');
+                const deleteBtn = e.target.closest('.delete-task-btn-card');
+
+                if (whatsappBtn || completeBtn || editBtn || deleteBtn) {
+                    e.stopPropagation();
+                }
+
+                if (completeBtn) {
+                    handleToggleTask(completeBtn.dataset.taskId, true);
+                    return;
+                }
+                if (editBtn) {
+                    showTaskEditorModal(editBtn.dataset.taskId, editBtn.dataset.dealId);
+                    return;
+                }
+                if (deleteBtn) {
+                    showDeleteConfirmModal(deleteBtn.dataset.taskId, deleteBtn.dataset.dealId);
+                    return;
+                }
+
                 const card = e.target.closest('.kanban-card');
                 if (card) {
                     showDealModal(card.dataset.dealId);
                 }
             });
+
             dealModal.addEventListener('click', (e) => {
                 if (e.target === dealModal) hideDealModal();
             });
             document.getElementById('add-deal-btn').addEventListener('click', () => showDealModal(null));
+            
+            // Listeners para o modal de confirmação
+            document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteConfirmModal);
+            document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+                if (taskToDelete.taskId) {
+                    handleDeleteTask(taskToDelete.taskId, taskToDelete.dealId);
+                }
+                hideDeleteConfirmModal();
+            });
         }
         
         function setupUserMenu() {
@@ -616,7 +773,7 @@
 
             let deal = { id_coluna_fk: 1, fase_followup: 0 };
             if (dealId) {
-                deal = appData.deals.find(d => d.id_negocio === dealId);
+                deal = appData.deals.find(d => d.id_negocio == dealId);
                 if (!deal) {
                     showToast("Negociação não encontrada.");
                     hideDealModal();
@@ -628,10 +785,10 @@
                 appData.history = [];
             }
 
-            const tasksForDeal = appData.tasks.filter(t => t.id_negocio_fk === dealId);
-            const usersOptions = appData.users.map(u => `<option value="${u.id_usuario}" ${deal.id_usuario_responsavel_fk === u.id_usuario ? 'selected' : ''}>${u.nome_usuario}</option>`).join('');
-            const columnsOptions = appData.columns.map(c => `<option value="${c.id_coluna}" ${deal.id_coluna_fk === c.id_coluna ? 'selected' : ''}>${c.nome_coluna}</option>`).join('');
-            const dealTagIds = appData.deal_tags.filter(dt => dt.id_negocio_fk === dealId).map(dt => dt.id_tag_fk);
+            const tasksForDeal = appData.tasks.filter(t => t.id_negocio_fk == dealId);
+            const usersOptions = appData.users.map(u => `<option value="${u.id_usuario}" ${deal.id_usuario_responsavel_fk == u.id_usuario ? 'selected' : ''}>${u.nome_usuario}</option>`).join('');
+            const columnsOptions = appData.columns.map(c => `<option value="${c.id_coluna}" ${deal.id_coluna_fk == c.id_coluna ? 'selected' : ''}>${c.nome_coluna}</option>`).join('');
+            const dealTagIds = appData.deal_tags.filter(dt => dt.id_negocio_fk == dealId).map(dt => dt.id_tag_fk);
             const tagsCheckboxesHtml = appData.tags.map(tag => `
                 <label class="flex items-center space-x-2">
                     <input type="checkbox" class="deal-tag-checkbox" data-tag-id="${tag.id_tag}" ${dealTagIds.includes(tag.id_tag) ? 'checked' : ''}>
@@ -645,11 +802,11 @@
                         <div class="flex items-center gap-4">
                              <h2 class="text-2xl font-bold text-gray-800">${dealId ? deal.nome_empresa : 'Nova Negociação'}</h2>
                              <div class="flex items-center gap-2">
-                                <span class="text-sm font-semibold text-gray-600">Ativar Follow-up</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="followup-toggle" ${deal.fase_followup > 0 ? 'checked' : ''}>
-                                    <span class="slider"></span>
-                                </label>
+                                 <span class="text-sm font-semibold text-gray-600">Ativar Follow-up</span>
+                                 <label class="toggle-switch">
+                                     <input type="checkbox" id="followup-toggle" ${deal.fase_followup > 0 ? 'checked' : ''}>
+                                     <span class="slider"></span>
+                                 </label>
                              </div>
                         </div>
                         <button type="button" id="close-deal-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
@@ -732,7 +889,7 @@
 
                 const deleteBtn = e.target.closest('.delete-task-btn');
                 if (deleteBtn) {
-                    handleDeleteTask(deleteBtn.dataset.taskId, deleteBtn.dataset.dealId);
+                    showDeleteConfirmModal(deleteBtn.dataset.taskId, deleteBtn.dataset.dealId);
                 }
             });
              taskListContainer.addEventListener('change', (e) => {
@@ -753,7 +910,7 @@
                 if (dealId) {
                     const { data, error } = await dbClient.from('sf_negociacoes').update(dealData).eq('id_negocio', dealId).select().single();
                     if (error) throw error;
-                    const index = appData.deals.findIndex(d => d.id_negocio === dealId);
+                    const index = appData.deals.findIndex(d => d.id_negocio == dealId);
                     if (index > -1) appData.deals[index] = data;
                     showToast("Negociação atualizada!");
                 } else {
@@ -772,17 +929,15 @@
         }
         
         async function handleDeleteDeal(dealId) {
-            if (confirm("Tem certeza que deseja excluir esta negociação?")) {
-                try {
-                    const { error } = await dbClient.from('sf_negociacoes').delete().eq('id_negocio', dealId);
-                    if (error) throw error;
-                    appData.deals = appData.deals.filter(d => d.id_negocio !== dealId);
-                    showToast("Negociação excluída.");
-                    hideDealModal();
-                    renderBoard();
-                } catch (error) {
-                    showToast("Erro ao excluir: " + error.message);
-                }
+            try {
+                const { error } = await dbClient.from('sf_negociacoes').delete().eq('id_negocio', dealId);
+                if (error) throw error;
+                appData.deals = appData.deals.filter(d => d.id_negocio != dealId);
+                showToast("Negociação excluída.");
+                hideDealModal();
+                renderBoard();
+            } catch (error) {
+                showToast("Erro ao excluir: " + error.message);
             }
         }
         
@@ -794,7 +949,7 @@
             } else {
                 const { error } = await dbClient.from('sf_negociacao_tags').delete().match(record);
                 if (!error) {
-                    appData.deal_tags = appData.deal_tags.filter(dt => !(dt.id_negocio_fk === dealId && dt.id_tag_fk === parseInt(tagId)));
+                    appData.deal_tags = appData.deal_tags.filter(dt => !(dt.id_negocio_fk == dealId && dt.id_tag_fk == parseInt(tagId)));
                 }
             }
             renderBoard();
@@ -807,7 +962,7 @@
             if (error) {
                 showToast("Erro ao atualizar follow-up.");
             } else {
-                const dealIndex = appData.deals.findIndex(d => d.id_negocio === dealId);
+                const dealIndex = appData.deals.findIndex(d => d.id_negocio == dealId);
                 if (dealIndex > -1) {
                     appData.deals[dealIndex].fase_followup = newPhase;
                 }
@@ -823,7 +978,7 @@
             const container = document.getElementById('task-list-container');
             if (!container) return;
             
-            const allTasks = appData.tasks.filter(t => t.id_negocio_fk === dealId);
+            const allTasks = appData.tasks.filter(t => t.id_negocio_fk == dealId);
             document.getElementById('task-badge').textContent = allTasks.length;
 
             const pendingTasks = allTasks.filter(t => !t.concluido);
@@ -884,25 +1039,43 @@
         
         async function handleToggleTask(taskId, isChecked) {
             const { error } = await dbClient.from('sf_tarefas').update({ concluido: isChecked }).eq('id_tarefa', taskId);
-            if (!error) {
-                const taskIndex = appData.tasks.findIndex(t => t.id_tarefa === taskId);
-                if (taskIndex > -1) {
-                    appData.tasks[taskIndex].concluido = isChecked;
-                    const dealId = appData.tasks[taskIndex].id_negocio_fk;
-                    renderTasks(dealId); // Re-renderiza para mover a tarefa entre seções
+            if (error) {
+                showToast("Erro ao atualizar tarefa.");
+                return;
+            }
+
+            const taskIndex = appData.tasks.findIndex(t => t.id_tarefa == taskId);
+            if (taskIndex > -1) {
+                appData.tasks[taskIndex].concluido = isChecked;
+                const dealId = appData.tasks[taskIndex].id_negocio_fk;
+
+                if (!dealModal.classList.contains('hidden')) {
+                    const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
+                    if (openDealId == dealId) {
+                        renderTasks(dealId);
+                    }
                 }
+                
+                renderBoard();
+                showToast(isChecked ? "Tarefa concluída!" : "Tarefa reaberta!");
             }
         }
         
         async function handleDeleteTask(taskId, dealId) {
-            if (!confirm("Tem certeza que deseja excluir esta tarefa?")) return;
             const { error } = await dbClient.from('sf_tarefas').delete().eq('id_tarefa', taskId);
             if (error) {
                 showToast("Erro ao excluir tarefa.");
             } else {
                 showToast("Tarefa excluída.");
-                appData.tasks = appData.tasks.filter(t => t.id_tarefa !== taskId);
-                renderTasks(dealId);
+                appData.tasks = appData.tasks.filter(t => t.id_tarefa != taskId);
+                
+                if (!dealModal.classList.contains('hidden')) {
+                    const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
+                    if (openDealId == dealId) {
+                        renderTasks(dealId);
+                    }
+                }
+                renderBoard();
             }
         }
         
@@ -924,20 +1097,24 @@
         }
         
         function showTaskEditorModal(taskId, dealId) {
-            const task = appData.tasks.find(t => t.id_tarefa === taskId);
-            if (!task) return;
+            const task = appData.tasks.find(t => t.id_tarefa == taskId);
+            if (!task) {
+                console.error("Tarefa não encontrada com ID:", taskId);
+                return;
+            }
 
             const editorModal = document.getElementById('task-editor-modal');
             const editorContent = document.getElementById('task-editor-content');
             
-            const usersOptions = appData.users.map(user => `<option value="${user.id_usuario}" ${task.id_usuario_responsavel_fk === user.id_usuario ? 'selected' : ''}>${user.nome_usuario}</option>`).join('');
+            const usersOptions = appData.users.map(user => `<option value="${user.id_usuario}" ${task.id_usuario_responsavel_fk == user.id_usuario ? 'selected' : ''}>${user.nome_usuario}</option>`).join('');
             const deadline = task.prazo_final ? task.prazo_final.split('T')[0] : '';
             
             editorContent.innerHTML = `
                 <form id="task-editor-form" data-task-id="${taskId}" data-deal-id="${dealId}">
                     <div class="p-6 border-b"><h3 class="text-xl font-bold">Editar Tarefa</h3></div>
                     <div class="p-6 space-y-4">
-                        <div><label class="font-medium">Título da Tarefa</label><input type="text" id="edit-task-title" value="${task.titulo_tarefa}" class="form-input" required></div>
+                        <div><label class="font-medium">Título da Tarefa</label><input type="text" id="edit-task-title" value="${task.titulo_tarefa || ''}" class="form-input" required></div>
+                        <div><label class="font-medium">Descrição</label><textarea id="edit-task-description" class="form-input" rows="4" placeholder="Adicione detalhes sobre a tarefa...">${task.descricao || ''}</textarea></div>
                         <div><label class="font-medium">Prazo Final</label><input type="date" id="edit-task-deadline" value="${deadline}" class="form-input"></div>
                         <div><label class="font-medium">Responsável</label><select id="edit-task-responsible" class="form-input"><option value="">Nenhum</option>${usersOptions}</select></div>
                     </div>
@@ -968,6 +1145,7 @@
         async function handleUpdateTask(taskId, dealId) {
             const updatedData = {
                 titulo_tarefa: document.getElementById('edit-task-title').value,
+                descricao: document.getElementById('edit-task-description').value,
                 prazo_final: document.getElementById('edit-task-deadline').value || null,
                 id_usuario_responsavel_fk: document.getElementById('edit-task-responsible').value || null
             };
@@ -976,20 +1154,41 @@
             
             if (error) {
                 showToast("Erro ao atualizar tarefa.");
+                console.error("Erro ao atualizar tarefa:", error);
             } else {
                 showToast("Tarefa atualizada com sucesso!");
-                const taskIndex = appData.tasks.findIndex(t => t.id_tarefa === taskId);
+                const taskIndex = appData.tasks.findIndex(t => t.id_tarefa == taskId);
                 if (taskIndex > -1) appData.tasks[taskIndex] = data;
                 hideTaskEditorModal();
                 renderTasks(dealId);
+                renderBoard(); // Re-renderiza o quadro para refletir as mudanças no card
             }
+        }
+
+        // --- LÓGICA DE MODAL DE CONFIRMAÇÃO ---
+        function showDeleteConfirmModal(taskId, dealId) {
+            taskToDelete = { taskId, dealId };
+            const modalContent = deleteConfirmModal.querySelector('.bg-white');
+            deleteConfirmModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            });
+        }
+
+        function hideDeleteConfirmModal() {
+            const modalContent = deleteConfirmModal.querySelector('.bg-white');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                deleteConfirmModal.classList.add('hidden');
+                taskToDelete = { taskId: null, dealId: null };
+            }, 300);
         }
         
         // --- LÓGICA DE HISTÓRICO ---
         function renderHistory(dealId) {
             const container = document.getElementById('history-list-container');
             if (!container) return;
-            const history = appData.history.filter(h => h.id_negocio_fk === dealId);
+            const history = appData.history.filter(h => h.id_negocio_fk == dealId);
             container.innerHTML = history.length > 0
                 ? history.map(entry => `
                     <div class="p-2 bg-slate-50 rounded-md">
