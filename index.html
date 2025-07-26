@@ -51,7 +51,7 @@
         .kanban-cards::-webkit-scrollbar { 
             display: none; /* Chrome, Safari, and Opera */
         }
-        #deal-modal-content, #history-list-container, #task-list-container {
+        #deal-modal-content, #history-list-container, #task-list-container, #followup-content-container {
             max-height: 75vh;
             overflow-y: auto;
         }
@@ -102,8 +102,6 @@
 
         /* --- ESTILOS PARA FOLLOW-UP E FILTROS --- */
         .followup-badge {
-            background-color: #dcfce7; /* green-100 */
-            color: #166534; /* green-800 */
             font-size: 11px;
             font-weight: 600;
             padding: 2px 8px;
@@ -189,11 +187,11 @@
                  <div class="flex items-center gap-2 w-full max-w-lg">
                      <div id="filter-container" class="relative flex-shrink-0">
                           <button id="filter-trigger-btn" class="flex items-center justify-center w-full px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                               <span id="filter-btn-text">TODAS AS TAGS</span>
-                               <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
+                                <span id="filter-btn-text">TODAS AS TAGS</span>
+                                <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
                           </button>
                           <div id="filter-popup" class="hidden popup-menu absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                               <div id="filter-options-container" class="py-1"></div>
+                                <div id="filter-options-container" class="py-1"></div>
                           </div>
                      </div>
                      <div class="relative flex-grow">
@@ -249,6 +247,18 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Confirmação de Envio de Follow-up -->
+    <div id="send-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all duration-300 ease-in-out scale-95 opacity-0">
+            <h3 class="text-lg font-bold text-gray-900">Confirmar Envio</h3>
+            <p class="text-gray-600 my-4">A mensagem foi aberta no WhatsApp. Você confirma o envio para registrar e avançar para a próxima fase?</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-send-btn" class="px-6 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-full font-semibold">Cancelar</button>
+                <button id="confirm-send-btn" class="px-6 py-2 text-white bg-green-600 hover:bg-green-700 rounded-full font-semibold">Sim, confirmo</button>
+            </div>
+        </div>
+    </div>
     
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2 transition-all duration-300 z-40"></div>
     <template id="loader-template"><div class="flex items-center justify-center h-full p-8"><i class="fas fa-spinner fa-spin text-4xl text-green-500"></i></div></template>
@@ -275,12 +285,14 @@
         const loaderTemplate = document.getElementById('loader-template');
         const toast = document.getElementById('toast');
         const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const sendConfirmModal = document.getElementById('send-confirm-modal');
         
-        let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [] };
+        let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [], followup_messages: [] };
         let currentUser = null;
         let activeTagId = null;
         let filterOnlyMyDeals = true;
         let taskToDelete = { taskId: null, dealId: null };
+        let followupToSend = { dealId: null, etapa: null };
 
 
         // --- FUNÇÕES DE UTILIDADE ---
@@ -339,16 +351,17 @@
 
         async function initializeApp() {
             try {
-                const [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes] = await Promise.all([
+                const [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes] = await Promise.all([
                     dbClient.from('sf_negociacoes').select('*'),
                     dbClient.from('sf_colunas').select('*').order('ordem'),
                     dbClient.from('sf_usuarios').select('*'),
                     dbClient.from('sf_tags').select('*'),
                     dbClient.from('sf_negociacao_tags').select('*'),
-                    dbClient.from('sf_tarefas').select('*')
+                    dbClient.from('sf_tarefas').select('*'),
+                    dbClient.from('sf_followup_mensagens').select('*')
                 ]);
 
-                const results = [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes];
+                const results = [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes];
                 for (const res of results) { if (res.error) throw res.error; }
 
                 appData = {
@@ -358,8 +371,12 @@
                     tags: tagsRes.data,
                     deal_tags: dealTagsRes.data,
                     tasks: tasksRes.data,
+                    followup_messages: followupMessagesRes.data,
                     history: []
                 };
+                
+                // NOVO: Console.log para diagnóstico
+                console.log("Dados de Follow-up Carregados:", appData.followup_messages);
 
                 loadingScreen.classList.add('hidden');
                 crmApp.classList.remove('hidden');
@@ -382,6 +399,14 @@
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_negociacoes' }, payload => handleRealtimeChange(payload, 'deals', 'id_negocio'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_tarefas' }, payload => handleRealtimeChange(payload, 'tasks', 'id_tarefa'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_negociacao_tags' }, payload => handleRealtimeChange(payload, 'deal_tags', 'id_negocio_fk'))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'log_envios_followup' }, payload => {
+                    if (!dealModal.classList.contains('hidden')) {
+                        const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
+                        if (openDealId && (payload.new?.id_negocio_fk === openDealId || payload.old?.id_negocio_fk === openDealId)) {
+                             showDealModal(openDealId);
+                        }
+                    }
+                })
                 .subscribe();
         }
 
@@ -396,7 +421,9 @@
                     } else {
                         exists = appData[appDataKey].some(item => item[idKey] === newRecord[idKey]);
                     }
-                    if (!exists) appData[appDataKey].push(newRecord);
+                    if (!exists) {
+                        appData[appDataKey].push(newRecord);
+                    }
                     break;
                 case 'UPDATE':
                     const indexToUpdate = appData[appDataKey].findIndex(item => item[idKey] === newRecord[idKey]);
@@ -408,7 +435,11 @@
                     break;
                 case 'DELETE':
                     if (appDataKey === 'deal_tags') {
-                        appData.deal_tags = appData.deal_tags.filter(dt => !(dt.id_negocio_fk === oldRecord.id_negocio_fk && dt.id_tag_fk === oldRecord.id_tag_fk));
+                        const oldIdNegocio = oldRecord.id_negocio_fk;
+                        const oldIdTag = oldRecord.id_tag_fk;
+                        if(oldIdNegocio && oldIdTag) {
+                            appData.deal_tags = appData.deal_tags.filter(dt => !(dt.id_negocio_fk === oldIdNegocio && dt.id_tag_fk === oldIdTag));
+                        }
                     } else {
                         const oldId = oldRecord[idKey];
                         if(oldId) appData[appDataKey] = appData[appDataKey].filter(item => item[idKey] != oldId);
@@ -418,7 +449,8 @@
             renderBoard(); 
             if (!dealModal.classList.contains('hidden')) {
                 const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
-                if (openDealId && (newRecord?.id_negocio_fk == openDealId || newRecord?.id_negocio == openDealId || oldRecord?.id_negocio_fk == openDealId || oldRecord?.id_negocio == openDealId)) {
+                const relevantId = newRecord?.id_negocio || oldRecord?.id_negocio || newRecord?.id_negocio_fk || oldRecord?.id_negocio_fk;
+                if (openDealId && relevantId == openDealId) {
                    showDealModal(openDealId);
                 }
             }
@@ -471,17 +503,22 @@
         }
 
         function createDealCard(deal) {
-            // --- DADOS DO CARD ---
             const responsibleUser = appData.users.find(u => u.id_usuario === deal.id_usuario_responsavel_fk);
             const dealTags = appData.deal_tags.filter(dt => dt.id_negocio_fk === deal.id_negocio).map(dt => appData.tags.find(t => t.id_tag === dt.id_tag_fk)).filter(Boolean);
             
-            // --- LÓGICA DE FOLLOW-UP ---
             let followupHtml = '';
             if (deal.fase_followup > 0) {
-                followupHtml = `<div class="followup-badge"><i class="fas fa-paper-plane text-xs"></i> Fase ${deal.fase_followup}</div>`;
+                const colors = [
+                    'bg-green-100 text-green-800',
+                    'bg-blue-100 text-blue-800',
+                    'bg-yellow-100 text-yellow-800',
+                    'bg-purple-100 text-purple-800',
+                    'bg-pink-100 text-pink-800',
+                ];
+                const colorClass = colors[(deal.fase_followup - 1) % colors.length];
+                followupHtml = `<div class="followup-badge ${colorClass}"><i class="fas fa-paper-plane text-xs"></i> Fase ${deal.fase_followup}</div>`;
             }
 
-            // --- LÓGICA DO AVATAR ---
             let responsibleHtml = '';
             if (responsibleUser) {
                 if (responsibleUser.foto_url) {
@@ -492,7 +529,6 @@
                 }
             }
 
-            // --- LÓGICA DA PRÓXIMA TAREFA ---
             let nextTaskHtml = '';
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -542,7 +578,6 @@
 
                 nextTaskHtml = `
                     <div class="task-wrapper relative group text-xs">
-                        <!-- Normal Display -->
                         <div class="task-display transition-opacity duration-200 ease-in-out group-hover:opacity-0">
                             <div class="flex items-center justify-between gap-2 p-2 rounded-md bg-slate-100">
                                 <div class="flex items-center gap-2 min-w-0">
@@ -552,8 +587,6 @@
                                 <span class="font-bold flex-shrink-0 px-2 py-0.5 rounded-full text-white text-[10px] ${taskBadgeColorClass}">${daysRemainingText}</span>
                             </div>
                         </div>
-
-                        <!-- Hover Actions -->
                         <div class="task-actions absolute inset-0 flex opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out rounded-md overflow-hidden">
                             <button type="button" class="complete-task-btn-card flex items-center justify-center w-1/3 h-full bg-green-500 hover:bg-green-600 text-white" title="Concluir Tarefa" data-task-id="${nextTask.id_tarefa}">
                                 <i class="fas fa-check"></i>
@@ -569,7 +602,6 @@
                 `;
             }
 
-            // --- LÓGICA DO BOTÃO WHATSAPP ---
             let whatsappHtml = '';
             if (deal.telefone_responsavel) {
                 let cleanPhone = deal.telefone_responsavel.replace(/\D/g, '');
@@ -586,7 +618,6 @@
                 }
             }
             
-            // --- MONTAGEM DO CARD ---
             const tagsHtml = dealTags.map(tag => `<span class="text-xs font-medium mr-1 mb-1 px-2 py-0.5 rounded-full" style="background-color:${tag.cor}20; color:${tag.cor};">${tag.nome_tag}</span>`).join('');
 
             return `
@@ -660,7 +691,6 @@
             });
         }
 
-        // --- LÓGICA DO DRAG-AND-DROP E CONTROLES DE COLUNA ---
         function initializeDragAndDrop() {
             document.querySelectorAll('.kanban-cards').forEach(column => {
                 new Sortable(column, {
@@ -704,7 +734,6 @@
             });
         }
         
-        // --- EVENT LISTENERS ---
         function setupEventListeners() {
             searchInput.addEventListener('input', renderBoard);
             
@@ -742,7 +771,6 @@
             });
             document.getElementById('add-deal-btn').addEventListener('click', () => showDealModal(null));
             
-            // Listeners para o modal de confirmação
             document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteConfirmModal);
             document.getElementById('confirm-delete-btn').addEventListener('click', () => {
                 if (taskToDelete.taskId) {
@@ -750,6 +778,9 @@
                 }
                 hideDeleteConfirmModal();
             });
+
+            document.getElementById('cancel-send-btn').addEventListener('click', hideSendConfirmModal);
+            document.getElementById('confirm-send-btn').addEventListener('click', handleConfirmSend);
         }
         
         function setupUserMenu() {
@@ -765,7 +796,6 @@
             document.getElementById('popup-logout-btn').addEventListener('click', (e) => { e.preventDefault(); showLogin(); });
         }
 
-        // --- LÓGICA DO MODAL DE NEGOCIAÇÃO ---
         async function showDealModal(dealId) {
             dealModalContent.innerHTML = loaderTemplate.content.cloneNode(true).outerHTML;
             dealModal.classList.remove('hidden');
@@ -788,6 +818,7 @@
             const tasksForDeal = appData.tasks.filter(t => t.id_negocio_fk == dealId);
             const usersOptions = appData.users.map(u => `<option value="${u.id_usuario}" ${deal.id_usuario_responsavel_fk == u.id_usuario ? 'selected' : ''}>${u.nome_usuario}</option>`).join('');
             const columnsOptions = appData.columns.map(c => `<option value="${c.id_coluna}" ${deal.id_coluna_fk == c.id_coluna ? 'selected' : ''}>${c.nome_coluna}</option>`).join('');
+            
             const dealTagIds = appData.deal_tags.filter(dt => dt.id_negocio_fk == dealId).map(dt => dt.id_tag_fk);
             const tagsCheckboxesHtml = appData.tags.map(tag => `
                 <label class="flex items-center space-x-2">
@@ -811,7 +842,7 @@
                         </div>
                         <button type="button" id="close-deal-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                     </div>
-                    <div class="border-b border-gray-200 flex-shrink-0"><nav class="modal-tabs flex space-x-4 px-6 -mb-px"><button type="button" data-tab="details" class="tab-button active">Detalhes</button><button type="button" data-tab="tasks" class="tab-button">Tarefas <span id="task-badge" class="tab-badge">${tasksForDeal.length}</span></button><button type="button" data-tab="history" class="tab-button">Histórico</button></nav></div>
+                    <div class="border-b border-gray-200 flex-shrink-0"><nav class="modal-tabs flex space-x-4 px-6 -mb-px"><button type="button" data-tab="details" class="tab-button active">Detalhes</button><button type="button" data-tab="followup" class="tab-button">Follow-up</button><button type="button" data-tab="tasks" class="tab-button">Tarefas <span id="task-badge" class="tab-badge">${tasksForDeal.length}</span></button><button type="button" data-tab="history" class="tab-button">Histórico</button></nav></div>
                     <div class="p-6 overflow-y-auto flex-grow">
                         <div id="tab-content-details" class="tab-content active space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -827,6 +858,7 @@
                                 <div class="mt-2 p-3 bg-slate-50 rounded-lg flex flex-wrap gap-4">${tagsCheckboxesHtml}</div>
                             </div>
                         </div>
+                        <div id="tab-content-followup" class="tab-content space-y-6"></div>
                         <div id="tab-content-tasks" class="tab-content"><div id="task-list-container" class="space-y-2 mb-4"></div><div class="flex gap-2"><input id="new-task-title" class="form-input flex-grow" placeholder="Nova tarefa..."><button type="button" id="add-task-btn" class="bg-green-500 hover:bg-green-600 text-white px-4 rounded-lg font-semibold">Add</button></div></div>
                         <div id="tab-content-history" class="tab-content"><div id="history-list-container" class="space-y-3 mb-4"></div><div class="flex gap-2"><textarea id="new-history-note" class="form-input flex-grow" placeholder="Adicionar uma nota..."></textarea><button type="button" id="add-note-btn" class="bg-blue-500 text-white px-4 rounded-lg font-semibold">Salvar</button></div></div>
                     </div>
@@ -840,6 +872,7 @@
             
             renderTasks(dealId);
             renderHistory(dealId);
+            if (dealId) renderFollowupTab(deal);
             setupModalTabs();
             setupModalActions(dealId);
         }
@@ -898,6 +931,14 @@
                     handleToggleTask(checkbox.dataset.taskId, checkbox.checked);
                 }
             });
+
+            const followupContainer = document.getElementById('tab-content-followup');
+            followupContainer.addEventListener('click', (e) => {
+                const sendBtn = e.target.closest('.manual-send-btn');
+                if (sendBtn) {
+                    handleManualSend(sendBtn, dealId);
+                }
+            });
         }
 
         async function handleSaveDeal(dealId) {
@@ -905,13 +946,13 @@
             const formData = new FormData(form);
             const dealData = Object.fromEntries(formData.entries());
             dealData.updated_at = new Date().toISOString();
-
+            
             try {
                 if (dealId) {
                     const { data, error } = await dbClient.from('sf_negociacoes').update(dealData).eq('id_negocio', dealId).select().single();
                     if (error) throw error;
                     const index = appData.deals.findIndex(d => d.id_negocio == dealId);
-                    if (index > -1) appData.deals[index] = data;
+                    if (index > -1) appData.deals[index] = { ...appData.deals[index], ...data };
                     showToast("Negociação atualizada!");
                 } else {
                     const { data, error } = await dbClient.from('sf_negociacoes').insert(dealData).select().single();
@@ -920,6 +961,7 @@
                     await addHistoryEntry(data.id_negocio, 'Criação', 'Negociação criada.');
                     showToast("Negociação criada!");
                 }
+                
                 hideDealModal();
                 renderBoard();
             } catch (error) {
@@ -952,6 +994,8 @@
                     appData.deal_tags = appData.deal_tags.filter(dt => !(dt.id_negocio_fk == dealId && dt.id_tag_fk == parseInt(tagId)));
                 }
             }
+            const deal = appData.deals.find(d => d.id_negocio == dealId);
+            renderFollowupTab(deal);
             renderBoard();
         }
 
@@ -970,10 +1014,188 @@
                 showToast(message);
                 await addHistoryEntry(dealId, "Follow-up", message);
                 renderBoard();
+                const deal = appData.deals.find(d => d.id_negocio == dealId);
+                renderFollowupTab(deal);
             }
         }
         
-        // --- LÓGICA DE TAREFAS (VIEW, ADD, EDIT, DELETE) ---
+        async function renderFollowupTab(deal) {
+            const container = document.getElementById('tab-content-followup');
+            if (!container) return;
+
+            container.innerHTML = loaderTemplate.content.cloneNode(true).outerHTML;
+
+            if (deal.fase_followup === 0) {
+                container.innerHTML = `<p class="text-gray-500 text-center p-4">Ative o Follow-up na aba "Detalhes" para ver as mensagens.</p>`;
+                return;
+            }
+
+            const dealTagIds = appData.deal_tags
+                .filter(dt => dt.id_negocio_fk === deal.id_negocio)
+                .map(dt => dt.id_tag_fk);
+            
+            const serviceTagIdsInMessages = [...new Set(appData.followup_messages.map(m => m.categoria_servico))];
+            
+            let serviceTagId = null;
+            for (const tagId of dealTagIds) {
+                if (serviceTagIdsInMessages.includes(tagId)) {
+                    serviceTagId = tagId;
+                    break;
+                }
+            }
+            
+            if (!serviceTagId) {
+                container.innerHTML = `<p class="text-gray-500 text-center p-4">Para carregar a cadência, adicione uma tag de serviço (ex: CHATBOT, TRÁFEGO PAGO) na aba "Detalhes".</p>`;
+                return;
+            }
+
+            const { data: sentLogs, error: logError } = await dbClient
+                .from('log_envios_followup')
+                .select('*')
+                .eq('id_negocio_fk', deal.id_negocio);
+            
+            if (logError) {
+                container.innerHTML = `<p class="text-red-500 text-center p-4">Erro ao carregar o histórico de envios.</p>`;
+                console.error(logError);
+                return;
+            }
+
+            const allMessagesForService = appData.followup_messages
+                .filter(m => m.categoria_servico === serviceTagId)
+                .sort((a, b) => a.etapa - b.etapa);
+
+            const sentEtapas = sentLogs.map(log => log.etapa_enviada);
+
+            const sentMessages = allMessagesForService.filter(m => sentEtapas.includes(m.etapa));
+            const upcomingMessages = allMessagesForService.filter(m => !sentEtapas.includes(m.etapa));
+
+            let finalHtml = '';
+
+            finalHtml += '<div><h3 class="text-lg font-semibold text-gray-800 mb-2">Mensagens Enviadas</h3>';
+            if (sentMessages.length > 0) {
+                finalHtml += '<div class="space-y-2">';
+                sentMessages.forEach(msg => {
+                    const log = sentLogs.find(l => l.etapa_enviada === msg.etapa);
+                    const sentDate = new Date(log.data_envio).toLocaleString('pt-BR');
+                    finalHtml += `
+                        <div class="p-3 bg-slate-100 rounded-lg flex items-center gap-4">
+                            <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                            <div>
+                                <p class="font-semibold text-gray-700">${msg.titulo}</p>
+                                <p class="text-xs text-gray-500">Enviado em: ${sentDate}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                finalHtml += '</div>';
+            } else {
+                finalHtml += '<p class="text-gray-500 text-sm">Nenhuma mensagem foi enviada ainda.</p>';
+            }
+            finalHtml += '</div>';
+
+            finalHtml += '<div><h3 class="text-lg font-semibold text-gray-800 mb-2">Próximas Mensagens</h3>';
+            if (upcomingMessages.length > 0) {
+                finalHtml += '<div class="space-y-3">';
+                upcomingMessages.forEach(msg => {
+                    // CORREÇÃO: Lógica de exibição do intervalo mais robusta
+                    let intervalText = 'Não definido';
+                    if (typeof msg.intervalo_dias === 'number' && msg.intervalo_dias !== null) {
+                        if (msg.intervalo_dias === 0) {
+                            intervalText = 'Envio imediato';
+                        } else if (msg.intervalo_dias === 1) {
+                            intervalText = 'Enviar em 1 dia';
+                        } else {
+                            intervalText = `Enviar em ${msg.intervalo_dias} dias`;
+                        }
+                    }
+
+                    const personalizedMessage = msg.corpo_mensagem.replace(/\[Nome do Cliente\]/g, deal.nome_responsavel_empresa || 'Cliente');
+                    finalHtml += `
+                        <div class="p-4 border rounded-lg bg-white">
+                            <div class="flex justify-between items-center mb-2">
+                                <p class="font-semibold text-gray-700">${msg.titulo} (Etapa ${msg.etapa})</p>
+                                <span class="text-xs font-semibold bg-slate-200 text-slate-600 px-2 py-1 rounded-full"><i class="far fa-clock mr-1"></i> ${intervalText}</span>
+                            </div>
+                            <textarea id="msg-textarea-${msg.id_mensagem}" class="form-input w-full text-sm" rows="4">${personalizedMessage}</textarea>
+                            <div class="flex justify-end mt-2">
+                                <button type="button" class="manual-send-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full flex items-center gap-2"
+                                    data-etapa="${msg.etapa}"
+                                    data-textarea-id="msg-textarea-${msg.id_mensagem}"
+                                    title="Enviar mensagem via WhatsApp">
+                                    <i class="fab fa-whatsapp"></i>
+                                    <span>Enviar Manualmente</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                finalHtml += '</div>';
+            } else {
+                finalHtml += '<p class="text-gray-500 text-sm">Todas as mensagens desta cadência já foram enviadas.</p>';
+            }
+            finalHtml += '</div>';
+
+            container.innerHTML = finalHtml;
+        }
+
+        async function handleManualSend(button, dealId) {
+            const deal = appData.deals.find(d => d.id_negocio == dealId);
+            if (!deal || !deal.telefone_responsavel) {
+                showToast("Número de telefone não encontrado para esta negociação.");
+                return;
+            }
+
+            const etapa = button.dataset.etapa;
+            const textareaId = button.dataset.textareaId;
+            const messageText = document.getElementById(textareaId).value;
+
+            let cleanPhone = deal.telefone_responsavel.replace(/\D/g, '');
+            if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
+                cleanPhone = '55' + cleanPhone;
+            }
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`;
+            window.open(whatsappUrl, '_blank');
+
+            showSendConfirmModal(dealId, etapa);
+        }
+        
+        async function handleConfirmSend() {
+            const { dealId, etapa } = followupToSend;
+            if (!dealId || !etapa) return;
+
+            try {
+                const logEntry = {
+                    id_negocio_fk: dealId,
+                    etapa_enviada: parseInt(etapa),
+                    data_envio: new Date().toISOString()
+                };
+                const { error: logError } = await dbClient.from('log_envios_followup').insert(logEntry);
+                if (logError) throw logError;
+                
+                const proximaFase = parseInt(etapa) + 1;
+                const { error: updateError } = await dbClient.from('sf_negociacoes').update({ fase_followup: proximaFase }).eq('id_negocio', dealId);
+                if (updateError) throw updateError;
+
+                const dealIndex = appData.deals.findIndex(d => d.id_negocio == dealId);
+                if (dealIndex > -1) {
+                    appData.deals[dealIndex].fase_followup = proximaFase;
+                }
+
+                showToast(`Envio da Etapa ${etapa} registrado! Negócio avançou para a Fase ${proximaFase}.`);
+                
+                await addHistoryEntry(dealId, 'Follow-up Manual', `Mensagem da Etapa ${etapa} confirmada. Negócio na fase ${proximaFase}.`);
+                
+                hideSendConfirmModal();
+                showDealModal(dealId);
+                renderBoard();
+                
+            } catch (error) {
+                showToast("Erro ao registrar o envio. Verifique as permissões da tabela.");
+                console.error("Erro ao confirmar envio:", error);
+                hideSendConfirmModal();
+            }
+        }
+        
         function renderTasks(dealId) {
             const container = document.getElementById('task-list-container');
             if (!container) return;
@@ -1161,11 +1383,11 @@
                 if (taskIndex > -1) appData.tasks[taskIndex] = data;
                 hideTaskEditorModal();
                 renderTasks(dealId);
-                renderBoard(); // Re-renderiza o quadro para refletir as mudanças no card
+                renderBoard();
             }
         }
 
-        // --- LÓGICA DE MODAL DE CONFIRMAÇÃO ---
+        // --- LÓGICA DE MODAIS DE CONFIRMAÇÃO ---
         function showDeleteConfirmModal(taskId, dealId) {
             taskToDelete = { taskId, dealId };
             const modalContent = deleteConfirmModal.querySelector('.bg-white');
@@ -1181,6 +1403,24 @@
             setTimeout(() => {
                 deleteConfirmModal.classList.add('hidden');
                 taskToDelete = { taskId: null, dealId: null };
+            }, 300);
+        }
+
+        function showSendConfirmModal(dealId, etapa) {
+            followupToSend = { dealId, etapa };
+            const modalContent = sendConfirmModal.querySelector('.bg-white');
+            sendConfirmModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            });
+        }
+
+        function hideSendConfirmModal() {
+            const modalContent = sendConfirmModal.querySelector('.bg-white');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                sendConfirmModal.classList.add('hidden');
+                followupToSend = { dealId: null, etapa: null };
             }, 300);
         }
         
@@ -1214,7 +1454,7 @@
             if (error) {
                 console.error("Erro ao salvar histórico: ", error);
             } else if (!dealModal.classList.contains('hidden')) {
-                appData.history.unshift(data); // Adiciona no início
+                appData.history.unshift(data);
                 renderHistory(dealId);
             }
         }
