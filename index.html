@@ -26,13 +26,15 @@
             overflow: hidden; 
             background-color: #f8fafc; 
         }
-        #kanban-board {
+        #kanban-board, #list-view {
             height: calc(100vh - 73px);
+            overflow-y: auto;
+        }
+        #kanban-board {
             overflow-x: auto;
-            overflow-y: hidden;
         }
         @media (max-width: 767px) {
-            #kanban-board {
+            #kanban-board, #list-view {
                 height: calc(100vh - 115px);
             }
         }
@@ -154,6 +156,13 @@
             border-color: #22c55e;
             color: #166534;
         }
+
+        /* --- NOVOS ESTILOS PARA VISÃO DE LISTA --- */
+        #list-view-filters .filter-btn.active {
+             background-color: #e2e8f0;
+             color: #1e293b;
+             font-weight: 600;
+        }
     </style>
 </head>
 <body class="font-sans h-full">
@@ -187,11 +196,11 @@
                  <div class="flex items-center gap-2 w-full max-w-lg">
                      <div id="filter-container" class="relative flex-shrink-0">
                           <button id="filter-trigger-btn" class="flex items-center justify-center w-full px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                                <span id="filter-btn-text">Tags</span>
-                                <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
+                              <span id="filter-btn-text">Tags</span>
+                              <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
                           </button>
                           <div id="filter-popup" class="hidden popup-menu absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                                <div id="filter-options-container" class="py-1"></div>
+                              <div id="filter-options-container" class="py-1"></div>
                           </div>
                      </div>
                      <div class="relative flex-grow">
@@ -201,6 +210,11 @@
                      <button id="my-deals-filter-btn" title="Filtrar minhas negociações" class="filter-btn flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-300 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors">
                          <i class="fas fa-user"></i>
                      </button>
+                     <!-- Botões de troca de visualização -->
+                     <div id="view-toggle-buttons" class="flex items-center border border-gray-300 rounded-full p-0.5 bg-slate-100">
+                        <button id="kanban-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold bg-white shadow" title="Visão Kanban"><i class="fas fa-grip-vertical"></i></button>
+                        <button id="list-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold text-gray-500" title="Visão de Lista"><i class="fas fa-list-ul"></i></button>
+                     </div>
                  </div>
             </div>
 
@@ -224,6 +238,34 @@
         </header>
 
         <main id="kanban-board" class="flex space-x-2 sm:space-x-4 p-2 sm:p-4 flex-grow"></main>
+        
+        <!-- Container para a Visão de Lista -->
+        <main id="list-view" class="hidden p-2 sm:p-4">
+            <div class="max-w-4xl mx-auto">
+                <!-- NOVO: Container de filtros com alinhamento justificado -->
+                <div class="flex justify-between items-center mb-4">
+                    <div id="list-view-filters" class="flex items-center gap-2 p-1 bg-slate-200 rounded-full w-fit">
+                        <button data-filter="all" class="list-filter-btn filter-btn active px-4 py-1 rounded-full text-sm font-medium border border-transparent">Todos</button>
+                        <button data-filter="tasks" class="list-filter-btn filter-btn px-4 py-1 rounded-full text-sm font-medium border border-transparent">Tarefas</button>
+                        <button data-filter="messages" class="list-filter-btn filter-btn px-4 py-1 rounded-full text-sm font-medium border border-transparent">Mensagens</button>
+                    </div>
+
+                    <!-- NOVO: Filtro de Colunas -->
+                    <div id="list-view-column-filter-container" class="relative">
+                        <button id="column-filter-trigger-btn" class="flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                            <span id="column-filter-btn-text">Todas as Colunas</span>
+                            <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
+                        </button>
+                        <div id="column-filter-popup" class="hidden popup-menu absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                            <div id="column-filter-options-container" class="py-1"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="list-view-container" class="space-y-3">
+                    <!-- Itens da lista serão inseridos aqui -->
+                </div>
+            </div>
+        </main>
     </div>
 
     <!-- Modal de Negociação -->
@@ -240,7 +282,7 @@
     <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all duration-300 ease-in-out scale-95 opacity-0">
             <h3 class="text-lg font-bold text-gray-900">Confirmar Exclusão</h3>
-            <p class="text-gray-600 my-4">Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.</p>
+            <p id="delete-confirm-message" class="text-gray-600 my-4">Tem certeza que deseja excluir? Esta ação não pode ser desfeita.</p>
             <div class="flex justify-center gap-4">
                 <button id="cancel-delete-btn" class="px-6 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-full font-semibold">Cancelar</button>
                 <button id="confirm-delete-btn" class="px-6 py-2 text-white bg-red-600 hover:bg-red-700 rounded-full font-semibold">Excluir</button>
@@ -286,13 +328,18 @@
         const toast = document.getElementById('toast');
         const deleteConfirmModal = document.getElementById('delete-confirm-modal');
         const sendConfirmModal = document.getElementById('send-confirm-modal');
+        const listView = document.getElementById('list-view');
+        const listViewContainer = document.getElementById('list-view-container');
         
-        let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [], followup_messages: [] };
+        let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [], followup_messages: [], followup_logs: [] };
         let currentUser = null;
         let activeTagId = null;
         let filterOnlyMyDeals = true;
-        let taskToDelete = { taskId: null, dealId: null };
+        let itemToDelete = { type: null, id: null, dealId: null };
         let followupToSend = { dealId: null, etapa: null };
+        let currentView = 'kanban';
+        let activeListViewFilter = 'all';
+        let activeListColumnFilter = null; // NOVO: Filtro de coluna para a lista
 
 
         // --- FUNÇÕES DE UTILIDADE ---
@@ -351,17 +398,18 @@
 
         async function initializeApp() {
             try {
-                const [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes] = await Promise.all([
+                const [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes, followupLogsRes] = await Promise.all([
                     dbClient.from('sf_negociacoes').select('*'),
                     dbClient.from('sf_colunas').select('*').order('ordem'),
                     dbClient.from('sf_usuarios').select('*'),
                     dbClient.from('sf_tags').select('*'),
                     dbClient.from('sf_negociacao_tags').select('*'),
                     dbClient.from('sf_tarefas').select('*'),
-                    dbClient.from('sf_followup_mensagens').select('*')
+                    dbClient.from('sf_followup_mensagens').select('*'),
+                    dbClient.from('log_envios_followup').select('*')
                 ]);
 
-                const results = [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes];
+                const results = [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes, followupLogsRes];
                 for (const res of results) { if (res.error) throw res.error; }
 
                 appData = {
@@ -372,17 +420,16 @@
                     deal_tags: dealTagsRes.data,
                     tasks: tasksRes.data,
                     followup_messages: followupMessagesRes.data,
+                    followup_logs: followupLogsRes.data,
                     history: []
                 };
                 
-                // NOVO: Console.log para diagnóstico
-                console.log("Dados de Follow-up Carregados:", appData.followup_messages);
-
                 loadingScreen.classList.add('hidden');
                 crmApp.classList.remove('hidden');
                 
                 setupFilters();
-                renderBoard();
+                setupListViewFilters(); // NOVO
+                renderCurrentView();
                 setupEventListeners();
                 setupRealtimeSubscriptions();
             } catch (error) {
@@ -400,10 +447,11 @@
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_tarefas' }, payload => handleRealtimeChange(payload, 'tasks', 'id_tarefa'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_negociacao_tags' }, payload => handleRealtimeChange(payload, 'deal_tags', 'id_negocio_fk'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'log_envios_followup' }, payload => {
+                    handleRealtimeChange(payload, 'followup_logs', 'id_log');
                     if (!dealModal.classList.contains('hidden')) {
                         const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
-                        if (openDealId && (payload.new?.id_negocio_fk === openDealId || payload.old?.id_negocio_fk === openDealId)) {
-                             showDealModal(openDealId);
+                        if (openDealId && (payload.new?.id_negocio_fk == openDealId || payload.old?.id_negocio_fk == openDealId)) {
+                            showDealModal(openDealId);
                         }
                     }
                 })
@@ -446,7 +494,7 @@
                     }
                     break;
             }
-            renderBoard(); 
+            renderCurrentView();
             if (!dealModal.classList.contains('hidden')) {
                 const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
                 const relevantId = newRecord?.id_negocio || oldRecord?.id_negocio || newRecord?.id_negocio_fk || oldRecord?.id_negocio_fk;
@@ -456,24 +504,34 @@
             }
         }
 
-        // --- RENDERIZAÇÃO DO QUADRO KANBAN E FILTROS ---
-        function renderBoard() {
-            let filteredDeals = appData.deals;
+        // --- LÓGICA DE RENDERIZAÇÃO PRINCIPAL ---
+        function renderCurrentView() {
+            if (currentView === 'kanban') {
+                renderKanbanView();
+            } else {
+                renderListView();
+            }
+        }
 
+        function getFilteredDeals() {
+            let filteredDeals = appData.deals;
             if (filterOnlyMyDeals) {
                 filteredDeals = filteredDeals.filter(deal => deal.id_usuario_responsavel_fk === currentUser.id_usuario);
             }
-            
             if (activeTagId) {
                 const dealIdsWithTag = appData.deal_tags.filter(dt => dt.id_tag_fk == activeTagId).map(dt => dt.id_negocio_fk);
                 filteredDeals = filteredDeals.filter(deal => dealIdsWithTag.includes(deal.id_negocio));
             }
-
             const searchTerm = searchInput.value.trim().toLowerCase();
             if (searchTerm.length >= 2) {
                 filteredDeals = filteredDeals.filter(deal => deal.nome_empresa.toLowerCase().includes(searchTerm));
             }
+            return filteredDeals;
+        }
 
+        // --- RENDERIZAÇÃO DO QUADRO KANBAN ---
+        function renderKanbanView() {
+            const filteredDeals = getFilteredDeals();
             kanbanBoard.innerHTML = '';
             appData.columns.forEach(column => {
                 const columnEl = document.createElement('div');
@@ -508,13 +566,7 @@
             
             let followupHtml = '';
             if (deal.fase_followup > 0) {
-                const colors = [
-                    'bg-green-100 text-green-800',
-                    'bg-blue-100 text-blue-800',
-                    'bg-yellow-100 text-yellow-800',
-                    'bg-purple-100 text-purple-800',
-                    'bg-pink-100 text-pink-800',
-                ];
+                const colors = ['bg-green-100 text-green-800', 'bg-blue-100 text-blue-800', 'bg-yellow-100 text-yellow-800', 'bg-purple-100 text-purple-800', 'bg-pink-100 text-pink-800'];
                 const colorClass = colors[(deal.fase_followup - 1) % colors.length];
                 followupHtml = `<div class="followup-badge ${colorClass}"><i class="fas fa-paper-plane text-xs"></i> Fase ${deal.fase_followup}</div>`;
             }
@@ -647,6 +699,200 @@
             `;
         }
         
+        // --- RENDERIZAÇÃO DA VISÃO DE LISTA (APRIMORADA) ---
+        function formatDueDateForList(dateString) {
+            if (!dateString) {
+                return { text: 'Sem data', color: 'text-red-600 font-bold' };
+            }
+            const dueDate = new Date(dateString);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            dueDate.setUTCHours(12, 0, 0, 0); // Normaliza para evitar problemas de fuso horário
+
+            const diffTime = dueDate.getTime() - today.getTime();
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                return { text: `Vencido há ${Math.abs(diffDays)} dia(s)`, color: 'text-red-600 font-bold' };
+            }
+            if (diffDays === 0) {
+                return { text: 'Hoje', color: 'text-red-500 font-bold' };
+            }
+            if (diffDays === 1) {
+                return { text: 'Amanhã', color: 'text-yellow-600 font-semibold' };
+            }
+            return { text: `Em ${diffDays} dias`, color: 'text-gray-500' };
+        }
+
+        function renderListView() {
+            let filteredDeals = getFilteredDeals();
+            
+            // NOVO: Aplica filtro de coluna se estiver ativo
+            if (activeListColumnFilter) {
+                filteredDeals = filteredDeals.filter(deal => deal.id_coluna_fk === activeListColumnFilter);
+            }
+
+            const dealIds = filteredDeals.map(d => d.id_negocio);
+            
+            let items = [];
+
+            // 1. Coletar tarefas pendentes
+            if (activeListViewFilter === 'all' || activeListViewFilter === 'tasks') {
+                const pendingTasks = appData.tasks.filter(task => !task.concluido && dealIds.includes(task.id_negocio_fk));
+                pendingTasks.forEach(task => {
+                    const deal = appData.deals.find(d => d.id_negocio === task.id_negocio_fk);
+                    if (deal) {
+                        items.push({
+                            type: 'task',
+                            dueDate: task.prazo_final ? new Date(task.prazo_final) : null,
+                            data: task,
+                            deal: deal
+                        });
+                    }
+                });
+            }
+
+            // 2. Coletar próximas mensagens de follow-up
+            if (activeListViewFilter === 'all' || activeListViewFilter === 'messages') {
+                const dealsWithFollowup = filteredDeals.filter(deal => deal.fase_followup > 0);
+                
+                dealsWithFollowup.forEach(deal => {
+                    const dealTagIds = appData.deal_tags.filter(dt => dt.id_negocio_fk === deal.id_negocio).map(dt => dt.id_tag_fk);
+                    const serviceTagIdsInMessages = [...new Set(appData.followup_messages.map(m => m.categoria_servico))];
+                    
+                    let serviceTagId = null;
+                    for (const tagId of dealTagIds) {
+                        if (serviceTagIdsInMessages.includes(tagId)) {
+                            serviceTagId = tagId;
+                            break;
+                        }
+                    }
+
+                    if (serviceTagId) {
+                        const sentLogsForDeal = appData.followup_logs
+                            .filter(log => log.id_negocio_fk === deal.id_negocio)
+                            .sort((a, b) => new Date(b.data_envio) - new Date(a.data_envio));
+                        
+                        const sentEtapas = sentLogsForDeal.map(log => log.etapa_enviada);
+                        
+                        const upcomingMessage = appData.followup_messages
+                            .filter(m => m.categoria_servico === serviceTagId && !sentEtapas.includes(m.etapa))
+                            .sort((a, b) => a.etapa - b.etapa)[0];
+
+                        if (upcomingMessage) {
+                            // CÁLCULO DA DATA DE VENCIMENTO DO FOLLOW-UP
+                            const lastLog = sentLogsForDeal[0];
+                            const baseDate = lastLog ? new Date(lastLog.data_envio) : new Date(deal.created_at);
+                            const interval = upcomingMessage.intervalo_dias || 0;
+                            const dueDate = new Date(baseDate);
+                            dueDate.setDate(dueDate.getDate() + interval);
+
+                            items.push({
+                                type: 'message',
+                                dueDate: dueDate,
+                                data: upcomingMessage,
+                                deal: deal
+                            });
+                        }
+                    }
+                });
+            }
+
+            // 3. Ordenar a lista
+            items.sort((a, b) => {
+                const aDate = a.dueDate;
+                const bDate = b.dueDate;
+                if (aDate === null && bDate === null) return 0;
+                if (aDate === null) return -1;
+                if (bDate === null) return 1;
+                return aDate - bDate;
+            });
+            
+            // 4. Renderizar HTML
+            if (items.length === 0) {
+                listViewContainer.innerHTML = `<div class="text-center text-gray-500 p-8">Nenhum item pendente para exibir.</div>`;
+                return;
+            }
+
+            listViewContainer.innerHTML = items.map(item => {
+                if (item.type === 'task') {
+                    return createListViewTaskItem(item);
+                } else {
+                    return createListViewMessageItem(item);
+                }
+            }).join('');
+        }
+
+        function createListViewTaskItem(item) {
+            const { data: task, deal, dueDate } = item;
+            const { text: dateHtml, color: dateColor } = formatDueDateForList(dueDate?.toISOString());
+            const responsibleUser = appData.users.find(u => u.id_usuario === task.id_usuario_responsavel_fk) || appData.users.find(u => u.id_usuario === deal.id_usuario_responsavel_fk);
+            let responsibleHtml = '';
+            if (responsibleUser) {
+                if (responsibleUser.foto_url) {
+                    responsibleHtml = `<img src="${responsibleUser.foto_url}" alt="${responsibleUser.nome_usuario}" title="${responsibleUser.nome_usuario}" class="w-8 h-8 rounded-full object-cover">`;
+                } else {
+                    const initial = responsibleUser.nome_usuario ? responsibleUser.nome_usuario.charAt(0).toUpperCase() : '?';
+                    responsibleHtml = `<div title="${responsibleUser.nome_usuario}" class="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-slate-600 font-bold text-sm">${initial}</div>`;
+                }
+            }
+
+            return `
+                <div class="list-view-item bg-white p-4 rounded-lg shadow-sm border flex items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors" data-deal-id="${deal.id_negocio}">
+                    <div class="flex-shrink-0">
+                        <button class="complete-task-btn-list w-6 h-6 rounded-full border-2 border-gray-300 hover:border-green-500 focus:outline-none transition-colors" title="Marcar como concluída" data-task-id="${task.id_tarefa}"></button>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <p class="font-semibold text-gray-800 truncate">${task.titulo_tarefa}</p>
+                        <p class="text-sm text-gray-500">
+                            <i class="fas fa-briefcase mr-1 text-gray-400"></i> ${deal.nome_empresa} &bull; <span class="${dateColor}"><i class="far fa-calendar-alt mr-1"></i> ${dateHtml}</span>
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0">
+                        ${responsibleHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function createListViewMessageItem(item) {
+            const { data: message, deal, dueDate } = item;
+            const { text: dateHtml, color: dateColor } = formatDueDateForList(dueDate?.toISOString());
+            const responsibleUser = appData.users.find(u => u.id_usuario === deal.id_usuario_responsavel_fk);
+            let responsibleHtml = '';
+            if (responsibleUser) {
+                if (responsibleUser.foto_url) {
+                    responsibleHtml = `<img src="${responsibleUser.foto_url}" alt="${responsibleUser.nome_usuario}" title="${responsibleUser.nome_usuario}" class="w-8 h-8 rounded-full object-cover">`;
+                } else {
+                    const initial = responsibleUser.nome_usuario ? responsibleUser.nome_usuario.charAt(0).toUpperCase() : '?';
+                    responsibleHtml = `<div title="${responsibleUser.nome_usuario}" class="w-8 h-8 rounded-full bg-slate-300 flex items-center justify-center text-slate-600 font-bold text-sm">${initial}</div>`;
+                }
+            }
+
+            return `
+                 <div class="list-view-item bg-white p-4 rounded-lg shadow-sm border flex items-center gap-4 cursor-pointer hover:bg-slate-50 transition-colors" data-deal-id="${deal.id_negocio}">
+                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center">
+                        <i class="fas fa-comment-dots text-blue-500 text-xl"></i>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                        <p class="font-semibold text-gray-800 truncate">${message.titulo} (Etapa ${message.etapa})</p>
+                        <p class="text-sm text-gray-500">
+                            <i class="fas fa-briefcase mr-1 text-gray-400"></i> ${deal.nome_empresa} &bull; <span class="${dateColor}"><i class="far fa-paper-plane mr-1"></i> ${dateHtml}</span>
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0 mr-2">
+                        <button class="send-message-btn-list bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-full flex items-center gap-2 text-sm" data-deal-id="${deal.id_negocio}" data-etapa="${message.etapa}" data-message-id="${message.id_mensagem}">
+                           <i class="fab fa-whatsapp"></i> Enviar
+                        </button>
+                    </div>
+                    <div class="flex-shrink-0">
+                        ${responsibleHtml}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // --- FILTROS E CONTROLES ---
         function setupFilters() {
             const triggerBtn = document.getElementById('filter-trigger-btn');
             const popup = document.getElementById('filter-popup');
@@ -671,7 +917,7 @@
                 activeTagId = target.dataset.tagId ? parseInt(target.dataset.tagId) : null;
                 btnText.textContent = target.textContent;
                 popup.classList.add('hidden');
-                renderBoard();
+                renderCurrentView();
             });
 
             triggerBtn.addEventListener('click', () => popup.classList.toggle('hidden'));
@@ -687,7 +933,58 @@
             myDealsBtn.addEventListener('click', () => {
                 filterOnlyMyDeals = !filterOnlyMyDeals;
                 myDealsBtn.classList.toggle('active');
-                renderBoard();
+                renderCurrentView();
+            });
+        }
+
+        // NOVO: Função para configurar os filtros da visão de lista
+        function setupListViewFilters() {
+            const columnTriggerBtn = document.getElementById('column-filter-trigger-btn');
+            const columnPopup = document.getElementById('column-filter-popup');
+            const columnOptionsContainer = document.getElementById('column-filter-options-container');
+            const columnBtnText = document.getElementById('column-filter-btn-text');
+
+            // Popula o filtro de colunas
+            columnOptionsContainer.innerHTML = `<a href="#" class="filter-column-option text-gray-700 block px-4 py-2 text-sm" data-column-id="">Todas as Colunas</a>`;
+            appData.columns.forEach(column => {
+                const option = document.createElement('a');
+                option.href = '#';
+                option.className = 'filter-column-option text-gray-700 block px-4 py-2 text-sm';
+                option.dataset.columnId = column.id_coluna;
+                option.textContent = column.nome_coluna;
+                columnOptionsContainer.appendChild(option);
+            });
+
+            // Event listener para as opções do filtro de coluna
+            columnOptionsContainer.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.filter-column-option');
+                if (!target) return;
+                activeListColumnFilter = target.dataset.columnId ? parseInt(target.dataset.columnId) : null;
+                columnBtnText.textContent = target.textContent;
+                columnPopup.classList.add('hidden');
+                renderListView();
+            });
+
+            // Event listener para abrir/fechar o popup de coluna
+            columnTriggerBtn.addEventListener('click', () => columnPopup.classList.toggle('hidden'));
+            
+            // Event listener para fechar o popup de coluna ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (!document.getElementById('list-view-column-filter-container').contains(e.target)) {
+                    columnPopup.classList.add('hidden');
+                }
+            });
+
+            // Event listener para os filtros de tipo (Todos, Tarefas, Mensagens)
+            document.getElementById('list-view-filters').addEventListener('click', (e) => {
+                const target = e.target.closest('.list-filter-btn');
+                if (target) {
+                    activeListViewFilter = target.dataset.filter;
+                    document.querySelectorAll('#list-view-filters .list-filter-btn').forEach(btn => btn.classList.remove('active'));
+                    target.classList.add('active');
+                    renderListView();
+                }
             });
         }
 
@@ -711,7 +1008,7 @@
                         } catch (error) {
                             showToast('Erro ao atualizar status.');
                             console.error("Erro ao mover card:", error);
-                            renderBoard();
+                            renderCurrentView();
                         }
                     }
                 });
@@ -735,7 +1032,7 @@
         }
         
         function setupEventListeners() {
-            searchInput.addEventListener('input', renderBoard);
+            searchInput.addEventListener('input', renderCurrentView);
             
             kanbanBoard.addEventListener('click', (e) => {
                 const whatsappBtn = e.target.closest('.whatsapp-btn');
@@ -756,7 +1053,7 @@
                     return;
                 }
                 if (deleteBtn) {
-                    showDeleteConfirmModal(deleteBtn.dataset.taskId, deleteBtn.dataset.dealId);
+                    showDeleteConfirmModal('task', deleteBtn.dataset.taskId, deleteBtn.dataset.dealId);
                     return;
                 }
 
@@ -766,6 +1063,59 @@
                 }
             });
 
+            // Event Listeners para a visão de lista (APRIMORADO)
+            document.getElementById('view-toggle-buttons').addEventListener('click', (e) => {
+                const kanbanBtn = document.getElementById('kanban-view-btn');
+                const listBtn = document.getElementById('list-view-btn');
+                const target = e.target.closest('button');
+
+                if (target && target.id === 'list-view-btn' && currentView !== 'list') {
+                    currentView = 'list';
+                    kanbanBoard.classList.add('hidden');
+                    listView.classList.remove('hidden');
+                    listBtn.classList.add('bg-white', 'shadow');
+                    listBtn.classList.remove('text-gray-500');
+                    kanbanBtn.classList.remove('bg-white', 'shadow');
+                    kanbanBtn.classList.add('text-gray-500');
+                    renderListView();
+                } else if (target && target.id === 'kanban-view-btn' && currentView !== 'kanban') {
+                    currentView = 'kanban';
+                    listView.classList.add('hidden');
+                    kanbanBoard.classList.remove('hidden');
+                    kanbanBtn.classList.add('bg-white', 'shadow');
+                    kanbanBtn.classList.remove('text-gray-500');
+                    listBtn.classList.remove('bg-white', 'shadow');
+                    listBtn.classList.add('text-gray-500');
+                    renderKanbanView();
+                }
+            });
+            
+            listViewContainer.addEventListener('click', (e) => {
+                const completeBtn = e.target.closest('.complete-task-btn-list');
+                const sendBtn = e.target.closest('.send-message-btn-list');
+                const listItem = e.target.closest('.list-view-item');
+
+                if (completeBtn) {
+                    e.stopPropagation();
+                    handleToggleTask(completeBtn.dataset.taskId, true);
+                    return;
+                }
+
+                if (sendBtn) {
+                    e.stopPropagation();
+                    handleSendMessageFromList(sendBtn);
+                    return;
+                }
+                
+                if (listItem) {
+                    const dealId = listItem.dataset.dealId;
+                    if (dealId) {
+                        showDealModal(dealId);
+                    }
+                }
+            });
+
+
             dealModal.addEventListener('click', (e) => {
                 if (e.target === dealModal) hideDealModal();
             });
@@ -773,8 +1123,10 @@
             
             document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteConfirmModal);
             document.getElementById('confirm-delete-btn').addEventListener('click', () => {
-                if (taskToDelete.taskId) {
-                    handleDeleteTask(taskToDelete.taskId, taskToDelete.dealId);
+                if (itemToDelete.type === 'task') {
+                    handleDeleteTask(itemToDelete.id, itemToDelete.dealId);
+                } else if (itemToDelete.type === 'deal') {
+                    handleDeleteDeal(itemToDelete.id);
                 }
                 hideDeleteConfirmModal();
             });
@@ -831,14 +1183,14 @@
                 <form data-deal-id="${dealId || ''}" class="flex flex-col h-full">
                     <div class="p-6 border-b flex justify-between items-center flex-shrink-0">
                         <div class="flex items-center gap-4">
-                             <h2 class="text-2xl font-bold text-gray-800">${dealId ? deal.nome_empresa : 'Nova Negociação'}</h2>
-                             <div class="flex items-center gap-2">
-                                 <span class="text-sm font-semibold text-gray-600">Ativar Follow-up</span>
-                                 <label class="toggle-switch">
-                                     <input type="checkbox" id="followup-toggle" ${deal.fase_followup > 0 ? 'checked' : ''}>
-                                     <span class="slider"></span>
-                                 </label>
-                             </div>
+                            <h2 class="text-2xl font-bold text-gray-800">${dealId ? deal.nome_empresa : 'Nova Negociação'}</h2>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-semibold text-gray-600">Ativar Follow-up</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="followup-toggle" ${deal.fase_followup > 0 ? 'checked' : ''}>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
                         <button type="button" id="close-deal-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
                     </div>
@@ -863,7 +1215,7 @@
                         <div id="tab-content-history" class="tab-content"><div id="history-list-container" class="space-y-3 mb-4"></div><div class="flex gap-2"><textarea id="new-history-note" class="form-input flex-grow" placeholder="Adicionar uma nota..."></textarea><button type="button" id="add-note-btn" class="bg-blue-500 text-white px-4 rounded-lg font-semibold">Salvar</button></div></div>
                     </div>
                     <div class="p-4 border-t bg-slate-50 flex justify-end items-center gap-3 flex-shrink-0">
-                        ${dealId ? `<button type="button" id="delete-deal-btn" class="text-red-500 hover:text-red-700 font-semibold mr-auto">Excluir</button>` : ''}
+                        ${dealId ? `<button type="button" id="delete-deal-btn" class="text-red-500 hover:text-red-700 font-semibold mr-auto">Excluir Negociação</button>` : ''}
                         <button type="button" id="cancel-deal-btn" class="px-4 py-2 text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full font-semibold">Cancelar</button>
                         <button type="submit" id="save-deal-btn" class="px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-full font-semibold">Salvar</button>
                     </div>
@@ -903,7 +1255,7 @@
             document.getElementById('cancel-deal-btn').addEventListener('click', hideDealModal);
             
             if (dealId) {
-                document.getElementById('delete-deal-btn').addEventListener('click', () => handleDeleteDeal(dealId));
+                document.getElementById('delete-deal-btn').addEventListener('click', () => showDeleteConfirmModal('deal', dealId));
                 document.querySelectorAll('.deal-tag-checkbox').forEach(cb => {
                     cb.addEventListener('change', (e) => handleTagChange(dealId, e.target.dataset.tagId, e.target.checked));
                 });
@@ -922,7 +1274,7 @@
 
                 const deleteBtn = e.target.closest('.delete-task-btn');
                 if (deleteBtn) {
-                    showDeleteConfirmModal(deleteBtn.dataset.taskId, deleteBtn.dataset.dealId);
+                    showDeleteConfirmModal('task', deleteBtn.dataset.taskId, deleteBtn.dataset.dealId);
                 }
             });
              taskListContainer.addEventListener('change', (e) => {
@@ -963,7 +1315,7 @@
                 }
                 
                 hideDealModal();
-                renderBoard();
+                renderCurrentView();
             } catch (error) {
                 showToast("Erro ao salvar: " + error.message);
                 console.error(error);
@@ -977,7 +1329,7 @@
                 appData.deals = appData.deals.filter(d => d.id_negocio != dealId);
                 showToast("Negociação excluída.");
                 hideDealModal();
-                renderBoard();
+                renderCurrentView();
             } catch (error) {
                 showToast("Erro ao excluir: " + error.message);
             }
@@ -996,7 +1348,7 @@
             }
             const deal = appData.deals.find(d => d.id_negocio == dealId);
             renderFollowupTab(deal);
-            renderBoard();
+            renderCurrentView();
         }
 
         async function handleFollowupToggle(dealId, isChecked) {
@@ -1013,7 +1365,7 @@
                 const message = isChecked ? "Follow-up ativado." : "Follow-up desativado.";
                 showToast(message);
                 await addHistoryEntry(dealId, "Follow-up", message);
-                renderBoard();
+                renderCurrentView();
                 const deal = appData.deals.find(d => d.id_negocio == dealId);
                 renderFollowupTab(deal);
             }
@@ -1030,10 +1382,7 @@
                 return;
             }
 
-            const dealTagIds = appData.deal_tags
-                .filter(dt => dt.id_negocio_fk === deal.id_negocio)
-                .map(dt => dt.id_tag_fk);
-            
+            const dealTagIds = appData.deal_tags.filter(dt => dt.id_negocio_fk === deal.id_negocio).map(dt => dt.id_tag_fk);
             const serviceTagIdsInMessages = [...new Set(appData.followup_messages.map(m => m.categoria_servico))];
             
             let serviceTagId = null;
@@ -1049,10 +1398,7 @@
                 return;
             }
 
-            const { data: sentLogs, error: logError } = await dbClient
-                .from('log_envios_followup')
-                .select('*')
-                .eq('id_negocio_fk', deal.id_negocio);
+            const { data: sentLogs, error: logError } = await dbClient.from('log_envios_followup').select('*').eq('id_negocio_fk', deal.id_negocio);
             
             if (logError) {
                 container.innerHTML = `<p class="text-red-500 text-center p-4">Erro ao carregar o histórico de envios.</p>`;
@@ -1060,12 +1406,8 @@
                 return;
             }
 
-            const allMessagesForService = appData.followup_messages
-                .filter(m => m.categoria_servico === serviceTagId)
-                .sort((a, b) => a.etapa - b.etapa);
-
+            const allMessagesForService = appData.followup_messages.filter(m => m.categoria_servico === serviceTagId).sort((a, b) => a.etapa - b.etapa);
             const sentEtapas = sentLogs.map(log => log.etapa_enviada);
-
             const sentMessages = allMessagesForService.filter(m => sentEtapas.includes(m.etapa));
             const upcomingMessages = allMessagesForService.filter(m => !sentEtapas.includes(m.etapa));
 
@@ -1097,7 +1439,6 @@
             if (upcomingMessages.length > 0) {
                 finalHtml += '<div class="space-y-3">';
                 upcomingMessages.forEach(msg => {
-                    // CORREÇÃO: Lógica de exibição do intervalo mais robusta
                     let intervalText = 'Não definido';
                     if (typeof msg.intervalo_dias === 'number' && msg.intervalo_dias !== null) {
                         if (msg.intervalo_dias === 0) {
@@ -1158,6 +1499,30 @@
 
             showSendConfirmModal(dealId, etapa);
         }
+
+        function handleSendMessageFromList(button) {
+             const dealId = button.dataset.dealId;
+             const etapa = button.dataset.etapa;
+             const messageId = button.dataset.messageId;
+
+             const deal = appData.deals.find(d => d.id_negocio == dealId);
+             const message = appData.followup_messages.find(m => m.id_mensagem == messageId);
+
+             if (!deal || !message || !deal.telefone_responsavel) {
+                 showToast("Não foi possível enviar a mensagem. Verifique os dados da negociação.");
+                 return;
+             }
+
+             const personalizedMessage = message.corpo_mensagem.replace(/\[Nome do Cliente\]/g, deal.nome_responsavel_empresa || 'Cliente');
+             let cleanPhone = deal.telefone_responsavel.replace(/\D/g, '');
+             if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
+                cleanPhone = '55' + cleanPhone;
+             }
+             const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(personalizedMessage)}`;
+             window.open(whatsappUrl, '_blank');
+
+             showSendConfirmModal(dealId, etapa);
+        }
         
         async function handleConfirmSend() {
             const { dealId, etapa } = followupToSend;
@@ -1169,8 +1534,9 @@
                     etapa_enviada: parseInt(etapa),
                     data_envio: new Date().toISOString()
                 };
-                const { error: logError } = await dbClient.from('log_envios_followup').insert(logEntry);
+                const { data: logData, error: logError } = await dbClient.from('log_envios_followup').insert(logEntry).select().single();
                 if (logError) throw logError;
+                appData.followup_logs.push(logData);
                 
                 const proximaFase = parseInt(etapa) + 1;
                 const { error: updateError } = await dbClient.from('sf_negociacoes').update({ fase_followup: proximaFase }).eq('id_negocio', dealId);
@@ -1181,13 +1547,15 @@
                     appData.deals[dealIndex].fase_followup = proximaFase;
                 }
 
-                showToast(`Envio da Etapa ${etapa} registrado! Negócio avançou para a Fase ${proximaFase}.`);
+                showToast(`Envio da Etapa ${etapa} registrado!`);
                 
                 await addHistoryEntry(dealId, 'Follow-up Manual', `Mensagem da Etapa ${etapa} confirmada. Negócio na fase ${proximaFase}.`);
                 
                 hideSendConfirmModal();
-                showDealModal(dealId);
-                renderBoard();
+                if (!dealModal.classList.contains('hidden')) {
+                    showDealModal(dealId);
+                }
+                renderCurrentView();
                 
             } catch (error) {
                 showToast("Erro ao registrar o envio. Verifique as permissões da tabela.");
@@ -1268,8 +1636,8 @@
 
             const taskIndex = appData.tasks.findIndex(t => t.id_tarefa == taskId);
             if (taskIndex > -1) {
-                appData.tasks[taskIndex].concluido = isChecked;
                 const dealId = appData.tasks[taskIndex].id_negocio_fk;
+                appData.tasks[taskIndex].concluido = isChecked;
 
                 if (!dealModal.classList.contains('hidden')) {
                     const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
@@ -1278,7 +1646,7 @@
                     }
                 }
                 
-                renderBoard();
+                renderCurrentView();
                 showToast(isChecked ? "Tarefa concluída!" : "Tarefa reaberta!");
             }
         }
@@ -1297,7 +1665,7 @@
                         renderTasks(dealId);
                     }
                 }
-                renderBoard();
+                renderCurrentView();
             }
         }
         
@@ -1383,14 +1751,17 @@
                 if (taskIndex > -1) appData.tasks[taskIndex] = data;
                 hideTaskEditorModal();
                 renderTasks(dealId);
-                renderBoard();
+                renderCurrentView();
             }
         }
 
         // --- LÓGICA DE MODAIS DE CONFIRMAÇÃO ---
-        function showDeleteConfirmModal(taskId, dealId) {
-            taskToDelete = { taskId, dealId };
+        function showDeleteConfirmModal(type, id, dealId = null) {
+            itemToDelete = { type, id, dealId };
             const modalContent = deleteConfirmModal.querySelector('.bg-white');
+            const messageEl = document.getElementById('delete-confirm-message');
+            messageEl.textContent = `Tem certeza que deseja excluir est${type === 'task' ? 'a tarefa' : 'a negociação'}? Esta ação não pode ser desfeita.`;
+            
             deleteConfirmModal.classList.remove('hidden');
             requestAnimationFrame(() => {
                 modalContent.classList.remove('scale-95', 'opacity-0');
@@ -1402,7 +1773,7 @@
             modalContent.classList.add('scale-95', 'opacity-0');
             setTimeout(() => {
                 deleteConfirmModal.classList.add('hidden');
-                taskToDelete = { taskId: null, dealId: null };
+                itemToDelete = { type: null, id: null, dealId: null };
             }, 300);
         }
 
