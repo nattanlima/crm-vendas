@@ -242,15 +242,15 @@
         <!-- Container para a Visão de Lista -->
         <main id="list-view" class="hidden p-2 sm:p-4">
             <div class="max-w-4xl mx-auto">
-                <!-- NOVO: Container de filtros com alinhamento justificado -->
-                <div class="flex justify-between items-center mb-4">
+                <!-- Container de filtros com alinhamento justificado e responsivo -->
+                <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-4">
                     <div id="list-view-filters" class="flex items-center gap-2 p-1 bg-slate-200 rounded-full w-fit">
                         <button data-filter="all" class="list-filter-btn filter-btn active px-4 py-1 rounded-full text-sm font-medium border border-transparent">Todos</button>
                         <button data-filter="tasks" class="list-filter-btn filter-btn px-4 py-1 rounded-full text-sm font-medium border border-transparent">Tarefas</button>
                         <button data-filter="messages" class="list-filter-btn filter-btn px-4 py-1 rounded-full text-sm font-medium border border-transparent">Mensagens</button>
                     </div>
 
-                    <!-- NOVO: Filtro de Colunas -->
+                    <!-- Filtro de Colunas -->
                     <div id="list-view-column-filter-container" class="relative">
                         <button id="column-filter-trigger-btn" class="flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                             <span id="column-filter-btn-text">Todas as Colunas</span>
@@ -882,7 +882,7 @@
                     </div>
                     <div class="flex-shrink-0 mr-2">
                         <button class="send-message-btn-list bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-full flex items-center gap-2 text-sm" data-deal-id="${deal.id_negocio}" data-etapa="${message.etapa}" data-message-id="${message.id_mensagem}">
-                           <i class="fab fa-whatsapp"></i> Enviar
+                           <i class="fab fa-whatsapp"></i> <span class="hidden sm:inline">Enviar</span>
                         </button>
                     </div>
                     <div class="flex-shrink-0">
