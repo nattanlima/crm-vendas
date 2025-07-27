@@ -26,7 +26,7 @@
             overflow: hidden; 
             background-color: #f8fafc; 
         }
-        #kanban-board, #list-view {
+        #kanban-board, #list-view, #message-editor-modal-content {
             height: calc(100vh - 73px);
             overflow-y: auto;
         }
@@ -36,6 +36,9 @@
         @media (max-width: 767px) {
             #kanban-board, #list-view {
                 height: calc(100vh - 115px);
+            }
+             #message-editor-modal-content {
+                height: calc(100vh - 60px);
             }
         }
         .kanban-column {
@@ -230,6 +233,8 @@
                                  <p id="popup-user-name" class="text-sm font-semibold text-gray-900 truncate"></p>
                                  <p id="popup-user-email" class="text-sm text-gray-500 truncate"></p>
                              </div>
+                             <!-- NOVO: Link para editar mensagens (visível apenas para admins) -->
+                             <div id="admin-options"></div>
                              <a href="#" id="popup-logout-btn" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sair</a>
                          </div>
                      </div>
@@ -278,8 +283,25 @@
         <div id="task-editor-content" class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col transform transition-all duration-300 ease-in-out scale-95 opacity-0"></div>
     </div>
 
+    <!-- NOVO: Modal do Editor de Mensagens -->
+    <div id="message-editor-modal" class="fixed inset-0 bg-slate-100 hidden flex flex-col z-30">
+        <header class="bg-white p-4 flex justify-between items-center border-b border-slate-200 flex-shrink-0">
+            <h2 class="text-2xl font-bold text-gray-800">Editor de Mensagens de Follow-up</h2>
+            <button id="close-message-editor-btn" class="text-gray-400 hover:text-gray-600 text-3xl">&times;</button>
+        </header>
+        <div id="message-editor-modal-content" class="p-4 sm:p-6"></div>
+    </div>
+
+    <!-- NOVO: Modal do Formulário de Mensagem -->
+    <div id="message-form-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
+        <div id="message-form-content" class="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col transform transition-all duration-300 ease-in-out scale-95 opacity-0">
+            <!-- Conteúdo do formulário será injetado aqui -->
+        </div>
+    </div>
+
+
     <!-- Modal de Confirmação de Exclusão -->
-    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all duration-300 ease-in-out scale-95 opacity-0">
             <h3 class="text-lg font-bold text-gray-900">Confirmar Exclusão</h3>
             <p id="delete-confirm-message" class="text-gray-600 my-4">Tem certeza que deseja excluir? Esta ação não pode ser desfeita.</p>
@@ -291,7 +313,7 @@
     </div>
 
     <!-- Modal de Confirmação de Envio de Follow-up -->
-    <div id="send-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
+    <div id="send-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-all duration-300 ease-in-out scale-95 opacity-0">
             <h3 class="text-lg font-bold text-gray-900">Confirmar Envio</h3>
             <p class="text-gray-600 my-4">A mensagem foi aberta no WhatsApp. Você confirma o envio para registrar e avançar para a próxima fase?</p>
@@ -302,7 +324,7 @@
         </div>
     </div>
     
-    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2 transition-all duration-300 z-40"></div>
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white py-2 px-4 rounded-lg shadow-lg opacity-0 transform translate-y-2 transition-all duration-300 z-50"></div>
     <template id="loader-template"><div class="flex items-center justify-center h-full p-8"><i class="fas fa-spinner fa-spin text-4xl text-green-500"></i></div></template>
 
     <script>
@@ -330,6 +352,11 @@
         const sendConfirmModal = document.getElementById('send-confirm-modal');
         const listView = document.getElementById('list-view');
         const listViewContainer = document.getElementById('list-view-container');
+        // NOVOS ELEMENTOS
+        const messageEditorModal = document.getElementById('message-editor-modal');
+        const messageEditorModalContent = document.getElementById('message-editor-modal-content');
+        const messageFormModal = document.getElementById('message-form-modal');
+        const messageFormContent = document.getElementById('message-form-content');
         
         let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [], followup_messages: [], followup_logs: [] };
         let currentUser = null;
@@ -339,7 +366,7 @@
         let followupToSend = { dealId: null, etapa: null };
         let currentView = 'kanban';
         let activeListViewFilter = 'all';
-        let activeListColumnFilter = null; // NOVO: Filtro de coluna para a lista
+        let activeListColumnFilter = null;
 
 
         // --- FUNÇÕES DE UTILIDADE ---
@@ -428,7 +455,7 @@
                 crmApp.classList.remove('hidden');
                 
                 setupFilters();
-                setupListViewFilters(); // NOVO
+                setupListViewFilters(); 
                 renderCurrentView();
                 setupEventListeners();
                 setupRealtimeSubscriptions();
@@ -446,6 +473,7 @@
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_negociacoes' }, payload => handleRealtimeChange(payload, 'deals', 'id_negocio'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_tarefas' }, payload => handleRealtimeChange(payload, 'tasks', 'id_tarefa'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_negociacao_tags' }, payload => handleRealtimeChange(payload, 'deal_tags', 'id_negocio_fk'))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_followup_mensagens' }, payload => handleRealtimeChange(payload, 'followup_messages', 'id_mensagem'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'log_envios_followup' }, payload => {
                     handleRealtimeChange(payload, 'followup_logs', 'id_log');
                     if (!dealModal.classList.contains('hidden')) {
@@ -494,7 +522,13 @@
                     }
                     break;
             }
+            
+            // Re-renderiza a view atual e o editor de mensagens se estiver aberto
             renderCurrentView();
+            if (!messageEditorModal.classList.contains('hidden')) {
+                renderMessagesEditor();
+            }
+
             if (!dealModal.classList.contains('hidden')) {
                 const openDealId = dealModalContent.querySelector('form')?.dataset.dealId;
                 const relevantId = newRecord?.id_negocio || oldRecord?.id_negocio || newRecord?.id_negocio_fk || oldRecord?.id_negocio_fk;
@@ -880,9 +914,9 @@
                             <i class="fas fa-briefcase mr-1 text-gray-400"></i> ${deal.nome_empresa} &bull; <span class="${dateColor}"><i class="far fa-paper-plane mr-1"></i> ${dateHtml}</span>
                         </p>
                     </div>
-                    <div class="flex-shrink-0 mr-2">
-                        <button class="send-message-btn-list bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-full flex items-center gap-2 text-sm" data-deal-id="${deal.id_negocio}" data-etapa="${message.etapa}" data-message-id="${message.id_mensagem}">
-                           <i class="fab fa-whatsapp"></i> <span class="hidden sm:inline">Enviar</span>
+                    <div class="flex-shrink-0">
+                         <button class="send-message-btn-list bg-green-500 hover:bg-green-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-lg" data-deal-id="${deal.id_negocio}" data-etapa="${message.etapa}" data-message-id="${message.id_mensagem}" title="Enviar mensagem via WhatsApp">
+                           <i class="fab fa-whatsapp"></i>
                         </button>
                     </div>
                     <div class="flex-shrink-0">
@@ -991,7 +1025,10 @@
         function initializeDragAndDrop() {
             document.querySelectorAll('.kanban-cards').forEach(column => {
                 new Sortable(column, {
-                    group: 'kanban', animation: 150,
+                    group: 'kanban',
+                    animation: 150,
+                    delay: 100, // Adiciona um pequeno atraso para iniciar o arrasto em toque
+                    delayOnTouchOnly: true, // Aplica o atraso apenas em dispositivos de toque
                     onEnd: async (evt) => {
                         const { item, to, from } = evt;
                         const dealId = item.dataset.dealId;
@@ -1127,22 +1164,54 @@
                     handleDeleteTask(itemToDelete.id, itemToDelete.dealId);
                 } else if (itemToDelete.type === 'deal') {
                     handleDeleteDeal(itemToDelete.id);
+                } else if (itemToDelete.type === 'message') {
+                    handleDeleteMessage(itemToDelete.id);
                 }
                 hideDeleteConfirmModal();
             });
 
             document.getElementById('cancel-send-btn').addEventListener('click', hideSendConfirmModal);
             document.getElementById('confirm-send-btn').addEventListener('click', handleConfirmSend);
+
+            // NOVO: Event listeners para o editor de mensagens
+            document.getElementById('close-message-editor-btn').addEventListener('click', hideMessagesEditor);
+            messageEditorModal.addEventListener('click', (e) => {
+                if (e.target.id === 'add-new-message-btn') {
+                    showMessageForm();
+                }
+                const editBtn = e.target.closest('.edit-message-btn');
+                if (editBtn) {
+                    showMessageForm(editBtn.dataset.messageId);
+                }
+            });
         }
         
         function setupUserMenu() {
             const userAvatarBtn = document.getElementById('user-avatar-btn');
             const logoutPopup = document.getElementById('logout-popup');
+            const adminOptionsContainer = document.getElementById('admin-options');
             
             const userInitial = currentUser.nome_usuario ? currentUser.nome_usuario.charAt(0).toUpperCase() : '?';
             userAvatarBtn.innerHTML = currentUser.foto_url ? `<img src="${currentUser.foto_url}" class="w-full h-full object-cover">` : `<span>${userInitial}</span>`;
             document.getElementById('popup-user-name').textContent = currentUser.nome_usuario;
             document.getElementById('popup-user-email').textContent = currentUser.email;
+
+            // Adiciona opções de admin se o usuário for admin
+            adminOptionsContainer.innerHTML = '';
+            if (currentUser.nivel_acesso === 'admin') {
+                const editMessagesLink = document.createElement('a');
+                editMessagesLink.href = '#';
+                editMessagesLink.id = 'edit-messages-btn';
+                editMessagesLink.className = 'block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-t';
+                editMessagesLink.innerHTML = '<i class="fas fa-envelope-open-text mr-2"></i>Editar Mensagens';
+                adminOptionsContainer.appendChild(editMessagesLink);
+
+                editMessagesLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    logoutPopup.classList.add('hidden');
+                    showMessagesEditor();
+                });
+            }
 
             userAvatarBtn.addEventListener('click', () => logoutPopup.classList.toggle('hidden'));
             document.getElementById('popup-logout-btn').addEventListener('click', (e) => { e.preventDefault(); showLogin(); });
@@ -1760,7 +1829,7 @@
             itemToDelete = { type, id, dealId };
             const modalContent = deleteConfirmModal.querySelector('.bg-white');
             const messageEl = document.getElementById('delete-confirm-message');
-            messageEl.textContent = `Tem certeza que deseja excluir est${type === 'task' ? 'a tarefa' : 'a negociação'}? Esta ação não pode ser desfeita.`;
+            messageEl.textContent = `Tem certeza que deseja excluir est${type === 'task' ? 'a tarefa' : (type === 'message' ? 'a mensagem' : 'a negociação')}? Esta ação não pode ser desfeita.`;
             
             deleteConfirmModal.classList.remove('hidden');
             requestAnimationFrame(() => {
@@ -1827,6 +1896,192 @@
             } else if (!dealModal.classList.contains('hidden')) {
                 appData.history.unshift(data);
                 renderHistory(dealId);
+            }
+        }
+
+        // --- NOVAS FUNÇÕES: EDITOR DE MENSAGENS ---
+        function showMessagesEditor() {
+            messageEditorModal.classList.remove('hidden');
+            renderMessagesEditor();
+        }
+
+        function hideMessagesEditor() {
+            messageEditorModal.classList.add('hidden');
+        }
+
+        function renderMessagesEditor() {
+            const serviceTags = appData.tags.filter(tag => appData.followup_messages.some(m => m.categoria_servico === tag.id_tag));
+            
+            let html = `<div class="space-y-6">`;
+            
+            serviceTags.forEach(tag => {
+                const messagesForCategory = appData.followup_messages
+                    .filter(m => m.categoria_servico === tag.id_tag)
+                    .sort((a, b) => a.etapa - b.etapa);
+                
+                html += `
+                    <div>
+                        <div class="flex items-center gap-3 mb-3">
+                             <span class="w-4 h-4 rounded-full" style="background-color: ${tag.cor};"></span>
+                             <h3 class="text-xl font-bold text-gray-800">${tag.nome_tag}</h3>
+                        </div>
+                        <div class="space-y-2">
+                            ${messagesForCategory.map(msg => `
+                                <div class="bg-white p-3 rounded-lg border flex justify-between items-center">
+                                    <div>
+                                        <p class="font-semibold">Etapa ${msg.etapa}: ${msg.titulo}</p>
+                                        <p class="text-sm text-gray-500">Enviar após ${msg.intervalo_dias} dia(s)</p>
+                                    </div>
+                                    <button class="edit-message-btn text-gray-500 hover:text-blue-600" data-message-id="${msg.id_mensagem}">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>
+                <div class="mt-8 text-center">
+                    <button id="add-new-message-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-full">
+                        <i class="fas fa-plus mr-2"></i> Adicionar Nova Mensagem
+                    </button>
+                </div>
+            `;
+            messageEditorModalContent.innerHTML = html;
+        }
+
+        function showMessageForm(messageId = null) {
+            const isEditing = messageId !== null;
+            const message = isEditing ? appData.followup_messages.find(m => m.id_mensagem == messageId) : {};
+
+            const tagsOptions = appData.tags.map(tag => `<option value="${tag.id_tag}" ${message.categoria_servico == tag.id_tag ? 'selected' : ''}>${tag.nome_tag}</option>`).join('');
+
+            messageFormContent.innerHTML = `
+                <form id="message-form" data-message-id="${messageId || ''}">
+                    <div class="p-6 border-b">
+                        <h3 class="text-xl font-bold">${isEditing ? 'Editar Mensagem' : 'Nova Mensagem'}</h3>
+                    </div>
+                    <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                        <div>
+                            <label class="font-medium">Categoria do Serviço (Tag)</label>
+                            <select name="categoria_servico" class="form-input" required>
+                                <option value="">Selecione...</option>
+                                ${tagsOptions}
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="font-medium">Etapa</label>
+                                <input name="etapa" type="number" value="${message.etapa || ''}" class="form-input" placeholder="Ex: 1" required>
+                            </div>
+                             <div>
+                                <label class="font-medium">Intervalo (dias após etapa anterior)</label>
+                                <input name="intervalo_dias" type="number" value="${message.intervalo_dias || '0'}" class="form-input" placeholder="Ex: 3" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="font-medium">Título</label>
+                            <input name="titulo" value="${message.titulo || ''}" class="form-input" placeholder="Ex: Follow-up Pós-Reunião" required>
+                        </div>
+                         <div>
+                            <label class="font-medium">Corpo da Mensagem</label>
+                            <textarea name="corpo_mensagem" class="form-input" rows="5" placeholder="Use [Nome do Cliente] para personalizar.">${message.corpo_mensagem || ''}</textarea>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-slate-50 flex justify-between items-center">
+                        <div>
+                         ${isEditing ? `<button type="button" id="delete-message-btn" class="text-red-500 hover:text-red-700 font-semibold">Excluir</button>` : ''}
+                        </div>
+                        <div class="flex gap-3">
+                            <button type="button" id="cancel-message-form-btn" class="px-4 py-2 text-gray-600 bg-gray-200 hover:bg-gray-300 rounded-full font-semibold">Cancelar</button>
+                            <button type="submit" class="px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-full font-semibold">Salvar</button>
+                        </div>
+                    </div>
+                </form>
+            `;
+
+            messageFormModal.classList.remove('hidden');
+            requestAnimationFrame(() => messageFormContent.classList.remove('scale-95', 'opacity-0'));
+
+            document.getElementById('message-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleSaveMessage(messageId);
+            });
+            document.getElementById('cancel-message-form-btn').addEventListener('click', hideMessageForm);
+            if(isEditing) {
+                document.getElementById('delete-message-btn').addEventListener('click', () => {
+                    hideMessageForm();
+                    showDeleteConfirmModal('message', messageId);
+                });
+            }
+        }
+
+        function hideMessageForm() {
+            messageFormContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => messageFormModal.classList.add('hidden'), 300);
+        }
+
+        async function handleSaveMessage(messageId) {
+            const form = document.getElementById('message-form');
+            const formData = new FormData(form);
+            const rawData = Object.fromEntries(formData.entries());
+            
+            const messageData = {
+                categoria_servico: parseInt(rawData.categoria_servico),
+                etapa: parseInt(rawData.etapa),
+                intervalo_dias: parseInt(rawData.intervalo_dias),
+                titulo: rawData.titulo,
+                corpo_mensagem: rawData.corpo_mensagem
+            };
+
+            const existingStep = appData.followup_messages.find(m => 
+                m.categoria_servico === messageData.categoria_servico && 
+                m.etapa === messageData.etapa &&
+                m.id_mensagem != messageId
+            );
+
+            if (existingStep) {
+                showToast(`Erro: A etapa ${messageData.etapa} já existe para esta categoria.`);
+                return;
+            }
+
+            try {
+                if (messageId) { // Editando
+                    const { data, error } = await dbClient.from('sf_followup_mensagens').update(messageData).eq('id_mensagem', messageId).select().single();
+                    if (error) throw error;
+                    // ATUALIZAÇÃO IMEDIATA NO FRONT-END
+                    const index = appData.followup_messages.findIndex(m => m.id_mensagem == messageId);
+                    if (index > -1) appData.followup_messages[index] = data;
+                    showToast("Mensagem atualizada!");
+                } else { // Criando
+                    // CORREÇÃO: Gera um ID numérico único no lado do cliente
+                    const maxId = appData.followup_messages.reduce((max, msg) => msg.id_mensagem > max ? msg.id_mensagem : max, 0);
+                    messageData.id_mensagem = maxId + 1;
+
+                    const { data, error } = await dbClient.from('sf_followup_mensagens').insert(messageData).select().single();
+                    if (error) throw error;
+
+                    // ATUALIZAÇÃO IMEDIATA NO FRONT-END
+                    appData.followup_messages.push(data);
+                    showToast("Mensagem criada!");
+                }
+                hideMessageForm();
+                renderMessagesEditor(); // Re-renderiza o editor de mensagens
+            } catch (error) {
+                showToast("Erro ao salvar mensagem: " + error.message);
+                console.error(error);
+            }
+        }
+
+        async function handleDeleteMessage(messageId) {
+            try {
+                const { error } = await dbClient.from('sf_followup_mensagens').delete().eq('id_mensagem', messageId);
+                if (error) throw error;
+                showToast("Mensagem excluída com sucesso.");
+            } catch (error) {
+                showToast("Erro ao excluir mensagem: " + error.message);
             }
         }
 
