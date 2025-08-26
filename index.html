@@ -215,8 +215,8 @@
                      </button>
                      <!-- Botões de troca de visualização -->
                      <div id="view-toggle-buttons" class="flex items-center border border-gray-300 rounded-full p-0.5 bg-slate-100">
-                        <button id="kanban-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold bg-white shadow" title="Visão Kanban"><i class="fas fa-grip-vertical"></i></button>
-                        <button id="list-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold text-gray-500" title="Visão de Lista"><i class="fas fa-list-ul"></i></button>
+                         <button id="kanban-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold bg-white shadow" title="Visão Kanban"><i class="fas fa-grip-vertical"></i></button>
+                         <button id="list-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold text-gray-500" title="Visão de Lista"><i class="fas fa-list-ul"></i></button>
                      </div>
                  </div>
             </div>
@@ -703,6 +703,19 @@
                     `;
                 }
             }
+
+            // --- INÍCIO DA LÓGICA DO BALÃO DE REMARKETING ---
+            let remarketingHtml = '';
+            // Verifica se a negociação está na coluna 4 ou 5 e se qtd_msg_mkt é um número maior que 0
+            if ((deal.id_coluna_fk === 4 || deal.id_coluna_fk === 5) && deal.qtd_msg_mkt > 0) {
+                remarketingHtml = `
+                    <div class="flex items-center gap-1 text-slate-500 hover:text-slate-700" title="Mensagens de Remarketing Recebidas: ${deal.qtd_msg_mkt}">
+                        <i class="fas fa-bullhorn text-xl"></i>
+                        <span class="font-bold text-sm">${deal.qtd_msg_mkt}</span>
+                    </div>
+                `;
+            }
+            // --- FIM DA LÓGICA DO BALÃO DE REMARKETING ---
             
             const tagsHtml = dealTags.map(tag => `<span class="text-xs font-medium mr-1 mb-1 px-2 py-0.5 rounded-full" style="background-color:${tag.cor}20; color:${tag.cor};">${tag.nome_tag}</span>`).join('');
 
@@ -722,8 +735,9 @@
                     </div>
 
                     <div class="mt-auto pt-2 border-t border-gray-200 flex justify-between items-center">
-                        <div>
+                        <div class="flex items-center gap-4">
                             ${whatsappHtml}
+                            ${remarketingHtml}
                         </div>
                         <div>
                             ${responsibleHtml}
@@ -916,7 +930,7 @@
                     </div>
                     <div class="flex-shrink-0">
                          <button class="send-message-btn-list bg-green-500 hover:bg-green-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-lg" data-deal-id="${deal.id_negocio}" data-etapa="${message.etapa}" data-message-id="${message.id_mensagem}" title="Enviar mensagem via WhatsApp">
-                           <i class="fab fa-whatsapp"></i>
+                            <i class="fab fa-whatsapp"></i>
                         </button>
                     </div>
                     <div class="flex-shrink-0">
@@ -1585,7 +1599,7 @@
              const personalizedMessage = message.corpo_mensagem.replace(/\[Nome do Cliente\]/g, deal.nome_responsavel_empresa || 'Cliente');
              let cleanPhone = deal.telefone_responsavel.replace(/\D/g, '');
              if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {
-                cleanPhone = '55' + cleanPhone;
+                 cleanPhone = '55' + cleanPhone;
              }
              const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(personalizedMessage)}`;
              window.open(whatsappUrl, '_blank');
