@@ -197,27 +197,27 @@
             
             <div class="w-full md:w-auto md:flex-1 flex justify-center px-0 md:px-4 order-3 md:order-2">
                  <div class="flex items-center gap-2 w-full max-w-lg">
-                     <div id="filter-container" class="relative flex-shrink-0">
-                          <button id="filter-trigger-btn" class="flex items-center justify-center w-full px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                              <span id="filter-btn-text">Tags</span>
-                              <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
-                          </button>
-                          <div id="filter-popup" class="hidden popup-menu absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                              <div id="filter-options-container" class="py-1"></div>
-                          </div>
-                     </div>
-                     <div class="relative flex-grow">
+                      <div id="filter-container" class="relative flex-shrink-0">
+                           <button id="filter-trigger-btn" class="flex items-center justify-center w-full px-3 py-2 border border-gray-300 rounded-full bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                               <span id="filter-btn-text">Tags</span>
+                               <i class="fas fa-chevron-down ml-2 text-xs text-gray-500"></i>
+                           </button>
+                           <div id="filter-popup" class="hidden popup-menu absolute left-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                               <div id="filter-options-container" class="py-1"></div>
+                           </div>
+                      </div>
+                      <div class="relative flex-grow">
                          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400"></i></div>
                          <input type="search" id="search-input" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-400 focus:border-green-400" placeholder="Pesquisar por empresa...">
-                     </div>
-                     <button id="my-deals-filter-btn" title="Filtrar minhas negociações" class="filter-btn flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-300 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors">
-                         <i class="fas fa-user"></i>
-                     </button>
-                     <!-- Botões de troca de visualização -->
-                     <div id="view-toggle-buttons" class="flex items-center border border-gray-300 rounded-full p-0.5 bg-slate-100">
-                         <button id="kanban-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold bg-white shadow" title="Visão Kanban"><i class="fas fa-grip-vertical"></i></button>
-                         <button id="list-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold text-gray-500" title="Visão de Lista"><i class="fas fa-list-ul"></i></button>
-                     </div>
+                      </div>
+                      <button id="my-deals-filter-btn" title="Filtrar minhas negociações" class="filter-btn flex-shrink-0 w-10 h-10 flex items-center justify-center border border-gray-300 rounded-full bg-white text-gray-700 hover:bg-gray-50 transition-colors">
+                          <i class="fas fa-user"></i>
+                      </button>
+                      <!-- Botões de troca de visualização -->
+                      <div id="view-toggle-buttons" class="flex items-center border border-gray-300 rounded-full p-0.5 bg-slate-100">
+                          <button id="kanban-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold bg-white shadow" title="Visão Kanban"><i class="fas fa-grip-vertical"></i></button>
+                          <button id="list-view-btn" class="px-3 py-1 rounded-full text-sm font-semibold text-gray-500" title="Visão de Lista"><i class="fas fa-list-ul"></i></button>
+                      </div>
                  </div>
             </div>
 
@@ -358,7 +358,8 @@
         const messageFormModal = document.getElementById('message-form-modal');
         const messageFormContent = document.getElementById('message-form-content');
         
-        let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [], followup_messages: [], followup_logs: [] };
+        // NOVO: Adicionado 'empresas' ao estado da aplicação
+        let appData = { deals: [], columns: [], users: [], tags: [], deal_tags: [], tasks: [], history: [], followup_messages: [], followup_logs: [], empresas: [] };
         let currentUser = null;
         let activeTagId = null;
         let filterOnlyMyDeals = true;
@@ -425,7 +426,8 @@
 
         async function initializeApp() {
             try {
-                const [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes, followupLogsRes] = await Promise.all([
+                // NOVO: Adicionado 'empresasRes' ao Promise.all para carregar as novas empresas
+                const [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes, followupLogsRes, empresasRes] = await Promise.all([
                     dbClient.from('sf_negociacoes').select('*'),
                     dbClient.from('sf_colunas').select('*').order('ordem'),
                     dbClient.from('sf_usuarios').select('*'),
@@ -433,10 +435,11 @@
                     dbClient.from('sf_negociacao_tags').select('*'),
                     dbClient.from('sf_tarefas').select('*'),
                     dbClient.from('sf_followup_mensagens').select('*'),
-                    dbClient.from('log_envios_followup').select('*')
+                    dbClient.from('log_envios_followup').select('*'),
+                    dbClient.from('empresas_prospeccao').select('*').order('nome_empresa') // Carrega as empresas
                 ]);
 
-                const results = [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes, followupLogsRes];
+                const results = [dealsRes, columnsRes, usersRes, tagsRes, dealTagsRes, tasksRes, followupMessagesRes, followupLogsRes, empresasRes];
                 for (const res of results) { if (res.error) throw res.error; }
 
                 appData = {
@@ -448,6 +451,7 @@
                     tasks: tasksRes.data,
                     followup_messages: followupMessagesRes.data,
                     followup_logs: followupLogsRes.data,
+                    empresas: empresasRes.data, // Armazena os dados das empresas
                     history: []
                 };
                 
@@ -474,6 +478,7 @@
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_tarefas' }, payload => handleRealtimeChange(payload, 'tasks', 'id_tarefa'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_negociacao_tags' }, payload => handleRealtimeChange(payload, 'deal_tags', 'id_negocio_fk'))
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'sf_followup_mensagens' }, payload => handleRealtimeChange(payload, 'followup_messages', 'id_mensagem'))
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'empresas_prospeccao' }, payload => handleRealtimeChange(payload, 'empresas', 'id')) // NOVO: Escuta mudanças na tabela de empresas
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'log_envios_followup' }, payload => {
                     handleRealtimeChange(payload, 'followup_logs', 'id_log');
                     if (!dealModal.classList.contains('hidden')) {
@@ -534,6 +539,10 @@
                 const relevantId = newRecord?.id_negocio || oldRecord?.id_negocio || newRecord?.id_negocio_fk || oldRecord?.id_negocio_fk;
                 if (openDealId && relevantId == openDealId) {
                    showDealModal(openDealId);
+                }
+                 // NOVO: Se uma empresa for atualizada, recarrega o modal aberto para refletir o novo nome
+                if (appDataKey === 'empresas') {
+                     showDealModal(openDealId);
                 }
             }
         }
@@ -598,6 +607,10 @@
             const responsibleUser = appData.users.find(u => u.id_usuario === deal.id_usuario_responsavel_fk);
             const dealTags = appData.deal_tags.filter(dt => dt.id_negocio_fk === deal.id_negocio).map(dt => appData.tags.find(t => t.id_tag === dt.id_tag_fk)).filter(Boolean);
             
+            // NOVO: Encontra o nome da empresa de prospecção
+            const prospectingCompany = appData.empresas.find(e => e.id === deal.id_empresa_fk);
+            const prospectingCompanyHtml = prospectingCompany ? `<div class="text-xs text-slate-500 font-semibold mb-2 flex items-center gap-2"><i class="fa-solid fa-building"></i> ${prospectingCompany.nome_empresa}</div>` : '';
+
             let followupHtml = '';
             if (deal.fase_followup > 0) {
                 const colors = ['bg-green-100 text-green-800', 'bg-blue-100 text-blue-800', 'bg-yellow-100 text-yellow-800', 'bg-purple-100 text-purple-800', 'bg-pink-100 text-pink-800'];
@@ -722,6 +735,7 @@
             return `
                 <div class="kanban-card bg-white rounded-lg p-3 mb-3 border border-gray-200 hover:border-green-400 hover:shadow-md cursor-pointer flex flex-col justify-between min-h-[150px]" data-deal-id="${deal.id_negocio}">
                     <div>
+                        ${prospectingCompanyHtml} 
                         <div class="flex flex-wrap gap-y-1 mb-2">${tagsHtml}</div>
                         <div class="flex justify-between items-start mb-1">
                             <h3 class="font-semibold text-gray-800 pr-2 flex-grow">${deal.nome_empresa}</h3>
@@ -930,8 +944,8 @@
                     </div>
                     <div class="flex-shrink-0">
                          <button class="send-message-btn-list bg-green-500 hover:bg-green-600 text-white font-bold w-10 h-10 rounded-full flex items-center justify-center text-lg" data-deal-id="${deal.id_negocio}" data-etapa="${message.etapa}" data-message-id="${message.id_mensagem}" title="Enviar mensagem via WhatsApp">
-                            <i class="fab fa-whatsapp"></i>
-                        </button>
+                             <i class="fab fa-whatsapp"></i>
+                         </button>
                     </div>
                     <div class="flex-shrink-0">
                         ${responsibleHtml}
@@ -1254,6 +1268,9 @@
             const usersOptions = appData.users.map(u => `<option value="${u.id_usuario}" ${deal.id_usuario_responsavel_fk == u.id_usuario ? 'selected' : ''}>${u.nome_usuario}</option>`).join('');
             const columnsOptions = appData.columns.map(c => `<option value="${c.id_coluna}" ${deal.id_coluna_fk == c.id_coluna ? 'selected' : ''}>${c.nome_coluna}</option>`).join('');
             
+            // NOVO: Cria as opções para o seletor de empresas
+            const empresasOptions = appData.empresas.map(e => `<option value="${e.id}" ${deal.id_empresa_fk == e.id ? 'selected' : ''}>${e.nome_empresa}</option>`).join('');
+
             const dealTagIds = appData.deal_tags.filter(dt => dt.id_negocio_fk == dealId).map(dt => dt.id_tag_fk);
             const tagsCheckboxesHtml = appData.tags.map(tag => `
                 <label class="flex items-center space-x-2">
@@ -1281,7 +1298,15 @@
                     <div class="p-6 overflow-y-auto flex-grow">
                         <div id="tab-content-details" class="tab-content active space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div><label class="font-medium">Nome da Empresa</label><input name="nome_empresa" value="${deal.nome_empresa || ''}" class="form-input" required></div>
+                                <!-- NOVO: Campo para selecionar a empresa da prospecção -->
+                                <div class="md:col-span-2">
+                                    <label class="font-medium">Empresa da Prospecção</label>
+                                    <select name="id_empresa_fk" class="form-input" required>
+                                        <option value="">Selecione a empresa...</option>
+                                        ${empresasOptions}
+                                    </select>
+                                </div>
+                                <div><label class="font-medium">Nome da Empresa (Lead)</label><input name="nome_empresa" value="${deal.nome_empresa || ''}" class="form-input" required></div>
                                 <div><label class="font-medium">Nome do Responsável</label><input name="nome_responsavel_empresa" value="${deal.nome_responsavel_empresa || ''}" class="form-input"></div>
                                 <div><label class="font-medium">Telefone</label><input name="telefone_responsavel" value="${deal.telefone_responsavel || ''}" class="form-input"></div>
                                 <div><label class="font-medium">Rede Social (Link)</label><input name="redesocial" value="${deal.redesocial || ''}" class="form-input"></div>
@@ -1382,6 +1407,12 @@
             const dealData = Object.fromEntries(formData.entries());
             dealData.updated_at = new Date().toISOString();
             
+            // Validação simples para garantir que a empresa foi selecionada
+            if (!dealData.id_empresa_fk) {
+                showToast("Erro: É obrigatório selecionar a empresa da prospecção.");
+                return;
+            }
+
             try {
                 if (dealId) {
                     const { data, error } = await dbClient.from('sf_negociacoes').update(dealData).eq('id_negocio', dealId).select().single();
